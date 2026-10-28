@@ -10,7 +10,7 @@ Read first, in this order: `CLAUDE.md`, `docs/ARCHITECTURE.md`, `ROADMAP.md`, `R
 
 ## Decisions already made (don't re-litigate)
 
-- **Users:** one instance serves many users (for example a club hosts it). Personal use is just the one-user case.
+- **Users:** ~~one instance serves many users (for example a club hosts it)~~. Revised in October 2026: runners should control where their data lives and what clubs see. Read `docs/PRIVACY.md` before M2.
 - **Monorepo:** TypeScript Nx monorepo (Nx **23.3.1**, pinned exactly) with npm workspaces covering `apps/*`, `libs/*` and `libs/integrations/*`.
 - **Stack:** Hono API, React 19 + Vite PWA, SQLite through better-sqlite3 + Drizzle, Better Auth for password and passkey sign-in.
 - **Deployment:** a single Docker image in which the API serves the built PWA. Data lives in the `/data` volume.
@@ -137,7 +137,7 @@ Schema change workflow:
 1. Check out `main`, run `npm install`, then `npx nx run-many -t lint typecheck test build check` and the e2e tests.
 2. ~~Build and run the Docker image normally.~~ Done on 2026-10-28: it builds and boots cleanly without the sandbox workarounds, and imports work inside it.
 3. In a real browser, register, add a passkey, sign out and sign back in with it. Install the PWA. Create an invite and use it with `INVITE_ONLY=true`.
-4. Start **M2 (run clubs)**. M1 is done; see below.
+4. Next: **Privacy controls** (phase 1 of `docs/PRIVACY.md`), then **M2 (run clubs)** as a separate module. M1 is done; see below.
 
 ## M1 status
 
@@ -157,7 +157,7 @@ Schema change workflow:
 
 **Follow-ups noticed while testing:**
 
-- No password reset yet; an admin-generated reset link or a server command would do.
+- No password reset yet. Decided: a server command only, with no in-app admin reset (see `docs/PRIVACY.md`).
 - The dev API's port 3000 can clash with other local services (AdGuard here); make it configurable and have the Vite proxy follow it.
 - "Invalid origin" on sign-up should say which address to add to `TRUSTED_ORIGINS`.
 - Testing over HTTPS is easy with `tailscale serve --bg --https=<port> http://127.0.0.1:3300` and `ORIGIN` set to that address.
@@ -173,6 +173,8 @@ Schema change workflow:
 
 ## Draft run club model (M2)
 
+Phase 2 of `docs/PRIVACY.md` takes precedence where they differ. In particular, check-ins come from manual entries or from `club_share` snapshots, never from reading `activity` directly.
+
 - **club:** name, description, visibility, join code.
 - **club_member:** role is owner, organiser or member.
 - **club_location:** lat/lng and meeting-point notes.
@@ -181,5 +183,6 @@ Schema change workflow:
 - **rsvp:** going, maybe or no, plus pace group and guests.
 - **menu_item:** a club's café menu, with options.
 - **coffee_order:** rsvp, item, options and note, plus a saved "usual" per user.
-- **checkin:** feeds the attendance streak.
+- **club_share:** a snapshot of a run a member chose to share (summary, optionally a privacy-zoned track).
+- **checkin:** manual or from a `club_share`; feeds the attendance streak.
 - **Jobs:** an in-process scheduler (croner) runs order cutoff and summary, Web Push reminders (VAPID) and Open-Meteo weather lookups.
