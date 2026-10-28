@@ -8,6 +8,7 @@ import type { Db } from '@openrun/db';
 import type { Auth } from './auth.js';
 import type { Config } from './config.js';
 import type { AppEnv } from './context.js';
+import { activityRoutes, personalBestRoutes } from './routes/activities.js';
 import { adminRoutes } from './routes/admin.js';
 import { instanceRoutes } from './routes/instance.js';
 import { meRoutes } from './routes/me.js';
@@ -40,6 +41,8 @@ export function createApp({
   app.route('/api/instance', instanceRoutes);
   app.route('/api/me', meRoutes);
   app.route('/api/admin', adminRoutes);
+  app.route('/api/activities', activityRoutes);
+  app.route('/api/personal-bests', personalBestRoutes);
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));
 
   if (config.webDir) serveWeb(app, config.webDir);

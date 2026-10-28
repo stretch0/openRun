@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `personal_best_activity_distance_idx` ON `personal_best` (`activity_id`,`distance_m`);

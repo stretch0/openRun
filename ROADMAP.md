@@ -10,10 +10,11 @@
 - Installable PWA: manifest, service worker, offline cache for API reads, update prompt
 - A single Docker image (API serves the PWA), docker-compose, GitHub Actions CI and image publishing
 
-### M1 – Run log
+### M1 – Run log (in progress)
 
-- FIT and GPX import (several files at once), manual entry, original files kept
-- Activity page: map (MapLibre + OSM), splits, pace, heart rate and elevation charts
+- ✅ FIT and GPX import (several files at once, gzipped too), manual entry, original files kept
+- ✅ Activity page: map (MapLibre + OSM), splits, laps, pace, heart rate and elevation charts
+- ✅ Best efforts and PBs (1k, mile, 5k, 10k, half, marathon)
 - Dashboard: weekly and monthly distance, year heatmap, PBs (1k–marathon), race predictions (VDOT), shoe mileage
 - Export everything as JSON or CSV
 

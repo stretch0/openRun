@@ -1,4 +1,4 @@
-# Handover notes (end of M0)
+# Handover notes (M0 done, M1 part 1 done)
 
 ## Context
 
@@ -135,13 +135,28 @@ Schema change workflow:
 ## Suggested first steps in the new environment
 
 1. Check out `main`, run `npm install`, then `npx nx run-many -t lint typecheck test build check` and the e2e tests.
-2. Build and run the Docker image normally, without the sandbox workarounds, and confirm a clean first boot.
+2. ~~Build and run the Docker image normally.~~ Done on 2026-10-28: it builds and boots cleanly without the sandbox workarounds, and imports work inside it.
 3. In a real browser, register, add a passkey, sign out and sign back in with it. Install the PWA. Create an invite and use it with `INVITE_ONLY=true`.
-4. Start **M1 (run log)**:
-   - Create `libs/activity-files` for FIT (fit-file-parser) and GPX parsing.
-   - Add upload and manual-entry routes and an activity list and detail page (MapLibre + OSM).
-   - Add PB detection in `libs/domain`.
-   - Tables already exist; add a migration if the schema changes.
+4. Finish **M1 (run log)**. Part 1 (import, manual entry, activity page, PBs) is done; see below.
+
+## M1 status
+
+**Done (part 1):**
+
+- `libs/activity-files`: FIT (`fit-file-parser`) and GPX (`fast-xml-parser`) parsing, gzip detected by content. `@openrun/activity-files/testing` builds synthetic FIT/GPX runs for tests.
+- `libs/domain`: `Stream` type, moving time, elevation gain (3 m hysteresis), smoothed speed, splits, best efforts, manual-entry efforts, default names ("Morning Run"), duration parsing.
+- API: `/api/activities` (list with keyset cursor, `POST /import` multipart `files`, manual `POST /`, `GET/PATCH/DELETE /:id`, `/:id/stream`, `/:id/file`) and `/api/personal-bests`. See `docs/ARCHITECTURE.md` → Activities for duplicate detection, storage and how PBs work.
+- Migration `0001_best_effort_per_activity`: unique index on `personal_best(activity_id, distance_m)`.
+- Web: home feed with PBs and "Load more", `/activities/new` (multi-file import with drag and drop, manual form), `/activities/:id` (stats, best efforts with PB/2nd/3rd, MapLibre map, synced pace/HR/elevation charts, splits, laps, edit, delete, download).
+
+**Left for part 2:** dashboard (weekly and monthly distance, year heatmap, VDOT race predictions, shoe mileage; shoes need CRUD routes and an activity `shoeId` edit) and JSON/CSV export.
+
+**Gotchas from M1:**
+
+- MapLibre 6 has only named exports and must be pointed at its worker with `setWorkerUrl` (Vite `?url` import). Without it the base map shows but GeoJSON layers (the route) silently don't render.
+- The service worker precaches `.mjs` too, for that worker.
+- `apps/api/src/test-utils.ts` is in the spec tsconfig, not the app one.
+- The bottom nav is `position: fixed`, so full-page screenshots show it over the middle of the page.
 
 ## Draft run club model (M2)
 

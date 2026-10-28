@@ -101,6 +101,11 @@ export const lap = sqliteTable(
   (t) => [index('lap_activity_id_idx').on(t.activityId)],
 );
 
+/**
+ * The fastest effort over each standard distance within an activity, one row
+ * per activity and distance. A user's personal best is their fastest row, so
+ * deleting an activity needs no recalculation.
+ */
 export const personalBest = sqliteTable(
   'personal_best',
   {
@@ -116,5 +121,11 @@ export const personalBest = sqliteTable(
     durationS: real('duration_s').notNull(),
     achievedAt: timestamp('achieved_at').notNull(),
   },
-  (t) => [index('personal_best_user_distance_idx').on(t.userId, t.distanceM)],
+  (t) => [
+    index('personal_best_user_distance_idx').on(t.userId, t.distanceM),
+    uniqueIndex('personal_best_activity_distance_idx').on(
+      t.activityId,
+      t.distanceM,
+    ),
+  ],
 );

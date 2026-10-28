@@ -103,7 +103,9 @@
     ]
   },
   "dependencies": {
+    "@openrun/activity-files": "*",
     "@openrun/db": "*",
+    "@openrun/domain": "*",
     "@openrun/schemas": "*",
     "@better-auth/passkey": "*",
     "@hono/node-server": "*",
@@ -111,6 +113,8 @@
     "better-auth": "*",
     "better-sqlite3": "*",
     "drizzle-orm": "*",
+    "fast-xml-parser": "*",
+    "fit-file-parser": "*",
     "hono": "*",
     "zod": "*"
   },

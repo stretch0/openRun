@@ -21,7 +21,11 @@ export function Layout() {
         <div className="mx-auto flex max-w-2xl">
           <NavLink to="/" end className={tabClass}>
             <Icon d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z" />
-            Home
+            Runs
+          </NavLink>
+          <NavLink to="/activities/new" className={tabClass}>
+            <Icon d="M12 5v14M5 12h14" />
+            Add
           </NavLink>
           {me?.role === 'admin' && (
             <NavLink to="/admin" className={tabClass}>

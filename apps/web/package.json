@@ -6,10 +6,12 @@
     "name": "web"
   },
   "dependencies": {
+    "@openrun/domain": "*",
     "@openrun/schemas": "*",
     "@better-auth/passkey": "*",
     "@tanstack/react-query": "*",
     "better-auth": "*",
+    "maplibre-gl": "*",
     "react": "*",
     "react-dom": "*",
     "react-router-dom": "*",
