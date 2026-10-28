@@ -1,0 +1,10 @@
+services:
+  openrun:
+    image: ghcr.io/stretch0/openrun:latest
+    # To build from source instead: replace `image` with `build: .`
+    restart: unless-stopped
+    ports:
+      - '${PORT:-3000}:3000'
+    env_file: .env
+    volumes:
+      - ./data:/data

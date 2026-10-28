@@ -1,0 +1,164 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { type FormEvent, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { meSchema, type UpdateMe } from '@openrun/schemas';
+import { FormError } from '../components/auth-card';
+import { InstallButton } from '../components/install-button';
+import { api } from '../lib/api';
+import { authClient } from '../lib/auth-client';
+import { useMe } from '../lib/queries';
+
+export function SettingsPage() {
+  const { data: me } = useMe();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const updateMe = useMutation({
+    mutationFn: (body: UpdateMe) =>
+      api('/me', meSchema, { method: 'PATCH', body: JSON.stringify(body) }),
+    onSuccess: (data) => queryClient.setQueryData(['me'], data),
+  });
+
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    updateMe.mutate({
+      name: String(form.get('name')),
+      units: form.get('units') as UpdateMe['units'],
+      timezone: String(form.get('timezone')),
+    });
+  };
+
+  const signOut = async () => {
+    await authClient.signOut();
+    queryClient.clear();
+    navigate('/login', { replace: true });
+  };
+
+  if (!me) return null;
+
+  return (
+    <>
+      <h1 className="text-2xl font-semibold">Settings</h1>
+
+      <form onSubmit={onSubmit} className="card space-y-3">
+        <h2 className="font-semibold">Profile</h2>
+        <div>
+          <label className="label" htmlFor="name">
+            Name
+          </label>
+          <input
+            className="input"
+            id="name"
+            name="name"
+            defaultValue={me.name}
+            required
+          />
+        </div>
+        <div>
+          <label className="label" htmlFor="units">
+            Units
+          </label>
+          <select
+            className="input"
+            id="units"
+            name="units"
+            defaultValue={me.units}
+          >
+            <option value="metric">Kilometres</option>
+            <option value="imperial">Miles</option>
+          </select>
+        </div>
+        <div>
+          <label className="label" htmlFor="timezone">
+            Time zone
+          </label>
+          <select
+            className="input"
+            id="timezone"
+            name="timezone"
+            defaultValue={me.timezone}
+          >
+            {timeZones(me.timezone).map((tz: string) => (
+              <option key={tz}>{tz}</option>
+            ))}
+          </select>
+        </div>
+        <button className="btn-primary" disabled={updateMe.isPending}>
+          {updateMe.isSuccess ? 'Saved' : 'Save'}
+        </button>
+      </form>
+
+      <Passkeys />
+
+      <section className="card space-y-3">
+        <h2 className="font-semibold">This device</h2>
+        <InstallButton />
+        <button className="btn-secondary w-full" onClick={signOut}>
+          Sign out
+        </button>
+      </section>
+    </>
+  );
+}
+
+function timeZones(current: string) {
+  const zones = Intl.supportedValuesOf?.('timeZone') ?? [];
+  return zones.includes(current) ? zones : [current, ...zones];
+}
+
+function Passkeys() {
+  const { data: passkeys, refetch } = authClient.useListPasskeys();
+  const [error, setError] = useState<string | null>(null);
+
+  const add = async () => {
+    setError(null);
+    const result = await authClient.passkey.addPasskey({
+      name: deviceName(),
+    });
+    if (result?.error)
+      setError(result.error.message ?? 'Could not add passkey');
+    refetch();
+  };
+
+  const remove = async (id: string) => {
+    await authClient.passkey.deletePasskey({ id });
+    refetch();
+  };
+
+  return (
+    <section className="card space-y-3">
+      <h2 className="font-semibold">Passkeys</h2>
+      <p className="text-sm text-stone-500">
+        Sign in with Face ID, Touch ID, Windows Hello or a security key instead
+        of a password.
+      </p>
+      <FormError message={error} />
+      <ul className="divide-y divide-stone-200 dark:divide-stone-800">
+        {passkeys?.map((p) => (
+          <li key={p.id} className="flex items-center justify-between py-2">
+            <span>{p.name || 'Passkey'}</span>
+            <button
+              className="text-sm text-red-600"
+              onClick={() => remove(p.id)}
+            >
+              Remove
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button className="btn-secondary w-full" onClick={add}>
+        Add a passkey
+      </button>
+    </section>
+  );
+}
+
+function deviceName() {
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad/.test(ua)) return 'iPhone or iPad';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Mac/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows';
+  return 'This device';
+}

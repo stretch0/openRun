@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    env:
+      NX_NO_CLOUD: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: nrwl/nx-set-shas@v4
+
+      # Only runs when libs/db or the migrations changed.
+      - name: Check migrations match the schema
+        run: npx nx affected -t check
+
+      - run: npx nx affected -t lint typecheck test build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - run: npx nx affected -t e2e

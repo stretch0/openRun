@@ -1,0 +1,56 @@
+import { NavLink, Outlet } from 'react-router-dom';
+import { useMe } from '../lib/queries';
+
+const tabClass = ({ isActive }: { isActive: boolean }) =>
+  `flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium ${
+    isActive ? 'text-brand-600' : 'text-stone-500'
+  }`;
+
+export function Layout() {
+  const { data: me } = useMe();
+  return (
+    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col">
+      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-stone-200 bg-stone-50/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur dark:border-stone-800 dark:bg-stone-950/90">
+        <img src="/favicon.svg" alt="" className="h-7 w-7" />
+        <span className="text-lg font-semibold">openRun</span>
+      </header>
+      <main className="flex-1 space-y-4 px-4 py-4 pb-24">
+        <Outlet />
+      </main>
+      <nav className="fixed inset-x-0 bottom-0 border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-stone-800 dark:bg-stone-900/95">
+        <div className="mx-auto flex max-w-2xl">
+          <NavLink to="/" end className={tabClass}>
+            <Icon d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z" />
+            Home
+          </NavLink>
+          {me?.role === 'admin' && (
+            <NavLink to="/admin" className={tabClass}>
+              <Icon d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z" />
+              Admin
+            </NavLink>
+          )}
+          <NavLink to="/settings" className={tabClass}>
+            <Icon d="M12 15a3 3 0 100-6 3 3 0 000 6zm7.4-3a7.4 7.4 0 00-.1-1.3l2-1.6-2-3.4-2.4 1a7.5 7.5 0 00-2.2-1.3L14.4 3h-4l-.4 2.4a7.5 7.5 0 00-2.2 1.3l-2.4-1-2 3.4 2 1.6a7.4 7.4 0 000 2.6l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 002.2 1.3l.4 2.4h4l.4-2.4a7.5 7.5 0 002.2-1.3l2.4 1 2-3.4-2-1.6c.1-.4.1-.9.1-1.3z" />
+            Settings
+          </NavLink>
+        </div>
+      </nav>
+    </div>
+  );
+}
+
+function Icon({ d }: { d: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-6 w-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d={d} />
+    </svg>
+  );
+}

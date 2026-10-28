@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/web-e2e"
+    },
+    {
+      "path": "./apps/web"
+    },
+    {
+      "path": "./apps/api"
+    },
+    {
+      "path": "./libs/schemas"
+    },
+    {
+      "path": "./libs/db"
+    },
+    {
+      "path": "./libs/domain"
+    },
+    {
+      "path": "./libs/db-migrations"
+    }
+  ],
+  "compilerOptions": {}
+}

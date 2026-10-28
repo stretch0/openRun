@@ -1,0 +1,37 @@
+{
+  "name": "@openrun/db-migrations",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "nx": {
+    "name": "db-migrations",
+    "targets": {
+      "generate": {
+        "command": "drizzle-kit generate",
+        "options": {
+          "cwd": "{projectRoot}"
+        }
+      },
+      "check": {
+        "command": "node scripts/check.mjs",
+        "options": {
+          "cwd": "{projectRoot}"
+        },
+        "inputs": [
+          "default",
+          "^default"
+        ],
+        "cache": true
+      },
+      "migrate": {
+        "command": "drizzle-kit migrate",
+        "options": {
+          "cwd": "{projectRoot}"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@openrun/db": "*"
+  }
+}
