@@ -13,6 +13,7 @@ import {
   sportSchema,
 } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
+import { ShoeSelect } from '../components/shoe-settings';
 import { StreamCharts } from '../components/stream-charts';
 import {
   useActivity,
@@ -23,6 +24,7 @@ import {
 import { ApiError } from '../lib/api';
 import { SPORT_LABELS, formatDateTime, ordinal, pbLabel } from '../lib/format';
 import { useMe } from '../lib/queries';
+import { useShoes } from '../lib/stats';
 
 const RouteMap = lazy(() => import('../components/route-map'));
 
@@ -110,6 +112,8 @@ export function ActivityPage() {
 }
 
 function Stats({ activity: a, units }: { activity: Activity; units: Units }) {
+  const { data: shoes } = useShoes();
+  const shoe = shoes?.find((s) => s.id === a.shoeId);
   const stats: [string, string | null][] = [
     ['Distance', formatDistance(a.distanceM, units)],
     ['Moving time', formatDuration(a.durationS)],
@@ -128,6 +132,7 @@ function Stats({ activity: a, units }: { activity: Activity; units: Units }) {
     ['Max heart rate', a.maxHeartRate ? `${a.maxHeartRate} bpm` : null],
     ['Cadence', a.avgCadence ? `${a.avgCadence} spm` : null],
     ['Effort', a.rpe ? `${a.rpe}/10` : null],
+    ['Shoes', shoe?.name ?? null],
   ];
   return (
     <section className="card">
@@ -269,6 +274,10 @@ function EditActivity({
         sport: form.get('sport') as Sport,
         rpe: rpe ? Number(rpe) : null,
         notes: String(form.get('notes') ?? '') || null,
+        // Only when the shoe picker was shown, so a slow load can't clear it.
+        ...(form.has('shoeId')
+          ? { shoeId: String(form.get('shoeId')) || null }
+          : {}),
       },
       { onSuccess: onDone },
     );
@@ -320,6 +329,7 @@ function EditActivity({
           />
         </div>
       </div>
+      <ShoeSelect value={activity.shoeId} />
       <div>
         <label className="label" htmlFor="notes">
           Notes

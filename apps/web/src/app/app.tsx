@@ -9,6 +9,7 @@ import { HomePage } from '../pages/home';
 import { LoginPage } from '../pages/login';
 import { RegisterPage } from '../pages/register';
 import { SettingsPage } from '../pages/settings';
+import { StatsPage } from '../pages/stats';
 
 function RequireUser({ admin = false }: { admin?: boolean }) {
   const { data: me, isPending } = useMe();
@@ -37,6 +38,7 @@ export function App() {
             <Route index element={<HomePage />} />
             <Route path="activities/new" element={<AddActivityPage />} />
             <Route path="activities/:id" element={<ActivityPage />} />
+            <Route path="stats" element={<StatsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route element={<RequireUser admin />}>
               <Route path="admin" element={<AdminPage />} />

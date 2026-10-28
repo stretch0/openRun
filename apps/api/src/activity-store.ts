@@ -16,8 +16,13 @@ import type { Sport } from '@openrun/schemas';
 type ActivityRow = typeof schema.activity.$inferSelect;
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
-/** Sports that count towards running personal bests. */
-const RUNNING: readonly Sport[] = ['run', 'trail_run', 'treadmill', 'track'];
+/** Sports that count towards running totals and personal bests. */
+export const RUNNING: readonly Sport[] = [
+  'run',
+  'trail_run',
+  'treadmill',
+  'track',
+];
 
 // Streams are stored gzipped; rounding keeps them small without losing
 // anything a map or chart can show.

@@ -1,4 +1,4 @@
-# Handover notes (M0 done, M1 part 1 done)
+# Handover notes (M0 and M1 done)
 
 ## Context
 
@@ -137,11 +137,11 @@ Schema change workflow:
 1. Check out `main`, run `npm install`, then `npx nx run-many -t lint typecheck test build check` and the e2e tests.
 2. ~~Build and run the Docker image normally.~~ Done on 2026-10-28: it builds and boots cleanly without the sandbox workarounds, and imports work inside it.
 3. In a real browser, register, add a passkey, sign out and sign back in with it. Install the PWA. Create an invite and use it with `INVITE_ONLY=true`.
-4. Finish **M1 (run log)**. Part 1 (import, manual entry, activity page, PBs) is done; see below.
+4. Start **M2 (run clubs)**. M1 is done; see below.
 
 ## M1 status
 
-**Done (part 1):**
+**Part 1 (PR #2):**
 
 - `libs/activity-files`: FIT (`fit-file-parser`) and GPX (`fast-xml-parser`) parsing, gzip detected by content. `@openrun/activity-files/testing` builds synthetic FIT/GPX runs for tests.
 - `libs/domain`: `Stream` type, moving time, elevation gain (3 m hysteresis), smoothed speed, splits, best efforts, manual-entry efforts, default names ("Morning Run"), duration parsing.
@@ -149,7 +149,18 @@ Schema change workflow:
 - Migration `0001_best_effort_per_activity`: unique index on `personal_best(activity_id, distance_m)`.
 - Web: home feed with PBs and "Load more", `/activities/new` (multi-file import with drag and drop, manual form), `/activities/:id` (stats, best efforts with PB/2nd/3rd, MapLibre map, synced pace/HR/elevation charts, splits, laps, edit, delete, download).
 
-**Left for part 2:** dashboard (weekly and monthly distance, year heatmap, VDOT race predictions, shoe mileage; shoes need CRUD routes and an activity `shoeId` edit) and JSON/CSV export.
+**Part 2:**
+
+- `libs/domain`: VDOT and race predictions, daily/weekly/monthly totals in the user's time zone (weeks start Monday), CSV formatting.
+- API: `/api/shoes` (CRUD with mileage), `/api/stats`, `/api/export/activities.{json,csv}`; activities take a `shoeId` that must belong to the user.
+- Web: Stats tab (totals, weekly/monthly bar chart with table view, year heatmap, predictions, shoe wear), shoe picker on run forms, Shoes and Export in Settings.
+
+**Follow-ups noticed while testing:**
+
+- No password reset yet; an admin-generated reset link or a server command would do.
+- The dev API's port 3000 can clash with other local services (AdGuard here); make it configurable and have the Vite proxy follow it.
+- "Invalid origin" on sign-up should say which address to add to `TRUSTED_ORIGINS`.
+- Testing over HTTPS is easy with `tailscale serve --bg --https=<port> http://127.0.0.1:3300` and `ORIGIN` set to that address.
 
 **Gotchas from M1:**
 
@@ -157,6 +168,8 @@ Schema change workflow:
 - The service worker precaches `.mjs` too, for that worker.
 - `apps/api/src/test-utils.ts` is in the spec tsconfig, not the app one.
 - The bottom nav is `position: fixed`, so full-page screenshots show it over the middle of the page.
+- E2E tests share one signed-in session (`storageState`); signing in in every test trips Better Auth's rate limit.
+- The API reads `index.html` once at startup, so restart it after rebuilding the web app.
 
 ## Draft run club model (M2)
 

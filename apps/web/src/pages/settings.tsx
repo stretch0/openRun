@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { meSchema, type UpdateMe } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
 import { InstallButton } from '../components/install-button';
+import { ShoeSettings } from '../components/shoe-settings';
 import { api } from '../lib/api';
 import { authClient } from '../lib/auth-client';
 import { useMe } from '../lib/queries';
@@ -89,7 +90,33 @@ export function SettingsPage() {
         </button>
       </form>
 
+      <ShoeSettings units={me.units} />
+
       <Passkeys />
+
+      <section className="card space-y-3">
+        <h2 className="font-semibold">Export your data</h2>
+        <p className="text-sm text-stone-500">
+          Every run with its laps and best efforts, plus your shoes. The
+          original FIT and GPX files can be downloaded from each run.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <a
+            className="btn-secondary"
+            href="/api/export/activities.json"
+            download
+          >
+            Download JSON
+          </a>
+          <a
+            className="btn-secondary"
+            href="/api/export/activities.csv"
+            download
+          >
+            Download CSV
+          </a>
+        </div>
+      </section>
 
       <section className="card space-y-3">
         <h2 className="font-semibold">This device</h2>

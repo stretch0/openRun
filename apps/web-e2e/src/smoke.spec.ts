@@ -1,6 +1,13 @@
+import { readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 
 test.describe.configure({ mode: 'serial' });
+
+// Later tests reuse the admin's session: signing in every test trips the
+// auth rate limit.
+const authFile = join(tmpdir(), `openrun-e2e-auth-${process.pid}.json`);
 
 const admin = {
   name: 'Ada Runner',
@@ -21,6 +28,7 @@ test('first visit sets up the admin account', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: /Hi Ada/ })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Admin' })).toBeVisible();
+  await page.context().storageState({ path: authFile });
 });
 
 test('signs back in and creates an invite', async ({ page }) => {
@@ -47,68 +55,106 @@ function gpxRun() {
   return `<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1"><trk><name>Riverside loop</name><type>running</type><trkseg>${points}</trkseg></trk></gpx>`;
 }
 
-test('imports a run, shows it and deletes it', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByLabel('Email').fill(admin.email);
-  await page.getByLabel('Password').fill(admin.password);
-  await page.getByRole('button', { name: 'Sign in with password' }).click();
-  await expect(page.getByText('No runs yet')).toBeVisible();
+test.describe('signed in', () => {
+  test.use({ storageState: authFile });
 
-  await page.getByRole('link', { name: 'Add run' }).click();
-  await page.getByLabel('Activity files').setInputFiles({
-    name: 'riverside.gpx',
-    mimeType: 'application/gpx+xml',
-    buffer: Buffer.from(gpxRun()),
+  test('imports a run, shows it and deletes it', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByText('No runs yet')).toBeVisible();
+
+    await page.getByRole('link', { name: 'Add run' }).click();
+    await page.getByLabel('Activity files').setInputFiles({
+      name: 'riverside.gpx',
+      mimeType: 'application/gpx+xml',
+      buffer: Buffer.from(gpxRun()),
+    });
+    const results = page.getByRole('list', { name: 'Import results' });
+    await expect(results.getByText('Imported')).toBeVisible();
+    await results.getByRole('link', { name: 'View' }).click();
+
+    await expect(
+      page.getByRole('heading', { name: 'Riverside loop' }),
+    ).toBeVisible();
+    await expect(page.getByText('2.10 km')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Best efforts' }),
+    ).toBeVisible();
+    await expect(page.getByText('PB').first()).toBeVisible();
+    await expect(
+      page.getByRole('img', { name: 'Map of the route' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('group', { name: /Pace, heart rate/ }),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Splits' })).toBeVisible();
+
+    await page.getByRole('link', { name: '← Runs' }).click();
+    await expect(
+      page.getByRole('link', { name: /Riverside loop/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Personal bests' }),
+    ).toBeVisible();
+
+    await page.getByRole('link', { name: /Riverside loop/ }).click();
+    page.once('dialog', (d) => d.accept());
+    await page.getByRole('button', { name: 'Delete' }).click();
+    await expect(page.getByText('No runs yet')).toBeVisible();
   });
-  const results = page.getByRole('list', { name: 'Import results' });
-  await expect(results.getByText('Imported')).toBeVisible();
-  await results.getByRole('link', { name: 'View' }).click();
 
-  await expect(
-    page.getByRole('heading', { name: 'Riverside loop' }),
-  ).toBeVisible();
-  await expect(page.getByText('2.10 km')).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: 'Best efforts' }),
-  ).toBeVisible();
-  await expect(page.getByText('PB').first()).toBeVisible();
-  await expect(
-    page.getByRole('img', { name: 'Map of the route' }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('group', { name: /Pace, heart rate/ }),
-  ).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Splits' })).toBeVisible();
+  test('adds a run by hand', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Add run' }).click();
+    await page.getByLabel('Name').fill('Parkrun');
+    await page.getByLabel('Distance (km)').fill('5');
+    await page.getByLabel('Time').fill('24:30');
+    await page.getByRole('button', { name: 'Save run' }).click();
 
-  await page.getByRole('link', { name: '← Runs' }).click();
-  await expect(
-    page.getByRole('link', { name: /Riverside loop/ }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: 'Personal bests' }),
-  ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Parkrun' })).toBeVisible();
+    await expect(page.getByText('4:54 /km')).toBeVisible();
+    await expect(page.getByText('PB')).toBeVisible();
+  });
 
-  await page.getByRole('link', { name: /Riverside loop/ }).click();
-  page.once('dialog', (d) => d.accept());
-  await page.getByRole('button', { name: 'Delete' }).click();
-  await expect(page.getByText('No runs yet')).toBeVisible();
-});
+  test('tracks shoes, shows stats and exports', async ({ page }) => {
+    await page.goto('/');
 
-test('adds a run by hand', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByLabel('Email').fill(admin.email);
-  await page.getByLabel('Password').fill(admin.password);
-  await page.getByRole('button', { name: 'Sign in with password' }).click();
+    await page.getByRole('link', { name: 'Settings' }).click();
+    await page.getByRole('button', { name: 'Add shoes' }).click();
+    await page.getByLabel('Name', { exact: true }).last().fill('Pegasus');
+    await page.getByLabel(/Distance already on them/).fill('100');
+    await page.getByRole('button', { name: 'Add shoes' }).click();
+    await expect(page.getByText('100.00 km · 0 runs')).toBeVisible();
 
-  await page.getByRole('link', { name: 'Add run' }).click();
-  await page.getByLabel('Name').fill('Parkrun');
-  await page.getByLabel('Distance (km)').fill('5');
-  await page.getByLabel('Time').fill('24:30');
-  await page.getByRole('button', { name: 'Save run' }).click();
+    await page.goto('/activities/new');
+    await page.getByLabel('Name').fill('Tempo');
+    await page.getByLabel('Distance (km)').fill('10');
+    await page.getByLabel('Time').fill('45:00');
+    await page.getByLabel('Shoes').selectOption({ label: 'Pegasus' });
+    await page.getByRole('button', { name: 'Save run' }).click();
+    await expect(page.getByRole('heading', { name: 'Tempo' })).toBeVisible();
+    await expect(page.getByText('Pegasus')).toBeVisible();
 
-  await expect(page.getByRole('heading', { name: 'Parkrun' })).toBeVisible();
-  await expect(page.getByText('4:54 /km')).toBeVisible();
-  await expect(page.getByText('PB')).toBeVisible();
+    await page.getByRole('link', { name: 'Stats' }).click();
+    await expect(page.getByRole('heading', { name: 'Stats' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Race predictions' }),
+    ).toBeVisible();
+    await expect(page.getByText(/VDOT/)).toBeVisible();
+    await expect(
+      page.getByRole('meter', { name: 'Pegasus wear' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Monthly' }).click();
+    await expect(
+      page.getByRole('group', { name: 'Monthly running distance' }),
+    ).toBeVisible();
+
+    await page.getByRole('link', { name: 'Settings' }).click();
+    const download = page.waitForEvent('download');
+    await page.getByRole('link', { name: 'Download CSV' }).click();
+    const csv = await (await download).path();
+
+    expect(readFileSync(csv, 'utf8')).toContain('Tempo,run,10000,2700');
+  });
 });
 
 test('serves an installable PWA', async ({ page, request }) => {
