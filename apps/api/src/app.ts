@@ -9,6 +9,7 @@ import type { Auth } from './auth.js';
 import type { Config } from './config.js';
 import type { AppEnv } from './context.js';
 import { activityRoutes, personalBestRoutes } from './routes/activities.js';
+import { clubRoutes } from './clubs/routes.js';
 import { adminRoutes } from './routes/admin.js';
 import { exportRoutes } from './routes/export.js';
 import { instanceRoutes } from './routes/instance.js';
@@ -51,6 +52,7 @@ export function createApp({
   app.route('/api/stats', statsRoutes);
   app.route('/api/export', exportRoutes);
   app.route('/api/privacy', privacyRoutes);
+  app.route('/api/clubs', clubRoutes);
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));
 
   if (config.webDir) serveWeb(app, config.webDir);

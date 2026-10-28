@@ -27,7 +27,9 @@ test('first visit sets up the admin account', async ({ page }) => {
   await page.getByRole('button', { name: 'Create admin account' }).click();
 
   await expect(page.getByRole('heading', { name: /Hi Ada/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Admin' })).toBeVisible();
+  await expect(
+    page.getByRole('navigation').getByRole('link', { name: 'Admin' }),
+  ).toBeVisible();
   await page.context().storageState({ path: authFile });
 });
 
@@ -38,7 +40,10 @@ test('signs back in and creates an invite', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in with password' }).click();
   await expect(page.getByRole('heading', { name: /Hi Ada/ })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Admin' }).click();
+  await page
+    .getByRole('navigation')
+    .getByRole('link', { name: 'Admin' })
+    .click();
   await page.getByRole('button', { name: 'Create invite' }).click();
   await expect(page.getByRole('button', { name: 'Copy link' })).toBeVisible();
 });
@@ -118,7 +123,10 @@ test.describe('signed in', () => {
   test('tracks shoes, shows stats and exports', async ({ page }) => {
     await page.goto('/');
 
-    await page.getByRole('link', { name: 'Settings' }).click();
+    await page
+      .getByRole('navigation')
+      .getByRole('link', { name: 'Settings' })
+      .click();
     await page.getByRole('button', { name: 'Add shoes' }).click();
     await page.getByLabel('Name', { exact: true }).last().fill('Pegasus');
     await page.getByLabel(/Distance already on them/).fill('100');
@@ -134,7 +142,10 @@ test.describe('signed in', () => {
     await expect(page.getByRole('heading', { name: 'Tempo' })).toBeVisible();
     await expect(page.getByText('Pegasus')).toBeVisible();
 
-    await page.getByRole('link', { name: 'Stats' }).click();
+    await page
+      .getByRole('navigation')
+      .getByRole('link', { name: 'Stats' })
+      .click();
     await expect(page.getByRole('heading', { name: 'Stats' })).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'Race predictions' }),
@@ -148,7 +159,10 @@ test.describe('signed in', () => {
       page.getByRole('group', { name: 'Monthly running distance' }),
     ).toBeVisible();
 
-    await page.getByRole('link', { name: 'Settings' }).click();
+    await page
+      .getByRole('navigation')
+      .getByRole('link', { name: 'Settings' })
+      .click();
     const download = page.waitForEvent('download');
     await page.getByRole('link', { name: 'Download CSV' }).click();
     const csv = await (await download).path();
@@ -218,6 +232,78 @@ test.describe('privacy', () => {
     ).toBeVisible();
     await expect(page.getByText(/There's no reset by email/)).toBeVisible();
     await page.close();
+  });
+});
+
+test.describe('clubs', () => {
+  test.use({ storageState: authFile });
+
+  test('runs a club from invite to RSVP', async ({ page, browser }) => {
+    await page.goto('/clubs');
+    await page.getByRole('button', { name: 'Start a club' }).click();
+    await page.getByLabel('Name').fill('Parkside Runners');
+    await page.getByRole('button', { name: 'Create club' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Manage club' }),
+    ).toBeVisible();
+
+    // Every day, so there's always a run in the next few days.
+    await page.getByLabel('Name', { exact: true }).first().fill('Club run');
+    for (const day of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']) {
+      await page.getByText(day, { exact: true }).click();
+    }
+    await page.getByLabel('Pace groups').first().fill('Steady, Chatty');
+    await page.getByRole('button', { name: 'Add repeating run' }).click();
+    await expect(page.getByText(/Every Monday, .* at 08:00/)).toBeVisible();
+
+    await page.getByRole('link', { name: '← Parkside Runners' }).click();
+    const code = (
+      await page
+        .locator('section', { hasText: 'Invite people' })
+        .locator('.font-mono')
+        .textContent()
+    )?.trim();
+    expect(code).toMatch(/^[A-Z2-9]{8}$/);
+
+    const firstRun = page.getByRole('article').first();
+    await firstRun.getByRole('button', { name: 'Going' }).click();
+    await expect(firstRun.getByText('1 going')).toBeVisible();
+    await firstRun.getByRole('link').first().click();
+    await page.getByLabel('Pace group').selectOption('Chatty');
+    await page.getByLabel('Bringing guests').fill('1');
+    await page.getByRole('button', { name: 'Update' }).click();
+    await expect(page.getByRole('heading', { name: '2 going' })).toBeVisible();
+    const runUrl = page.url();
+
+    // A second runner joins with the invite link and says maybe.
+    const bea = await browser.newPage({ storageState: undefined });
+    await bea.goto('/register');
+    await bea.getByLabel('Name').fill('Bea');
+    await bea.getByLabel('Email').fill('bea@example.com');
+    await bea.getByLabel('Password').fill('correct horse battery');
+    await bea.getByRole('button', { name: 'Create account' }).click();
+    await expect(bea.getByRole('heading', { name: /Hi Bea/ })).toBeVisible();
+    await bea.goto(`/clubs/join/${code}`);
+    await expect(bea.getByText(/Your runs stay private/)).toBeVisible();
+    await bea.getByRole('button', { name: 'Join Parkside Runners' }).click();
+    await bea
+      .getByRole('article')
+      .first()
+      .getByRole('button', { name: 'Maybe' })
+      .click();
+    await expect(
+      bea.getByRole('article').first().getByText('1 maybe'),
+    ).toBeVisible();
+    await bea.close();
+
+    await page.goto(runUrl);
+    const going = page.locator('section', { hasText: '2 going' });
+    await expect(going.getByText('Chatty', { exact: true })).toBeVisible();
+    await expect(page.getByText(/Ada Runner\s*\+1/)).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: '2 going · 1 maybe' }),
+    ).toBeVisible();
+    await expect(page.getByText('Bea', { exact: true })).toBeVisible();
   });
 });
 

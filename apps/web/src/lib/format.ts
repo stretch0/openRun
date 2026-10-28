@@ -60,3 +60,20 @@ export function formatTotalTime(seconds: number) {
   const m = Math.round((seconds % 3600) / 60);
   return h ? `${h}h ${m}m` : `${m}m`;
 }
+
+/** "Sat 31 Oct, 08:00" in the club's time zone. */
+export function formatRunTime(iso: string, timeZone: string) {
+  return new Date(iso).toLocaleString(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone,
+  });
+}
+
+/** A link that opens a point in OpenStreetMap (and from there, any maps app). */
+export function mapLink(lat: number, lng: number) {
+  return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`;
+}

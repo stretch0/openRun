@@ -1,4 +1,4 @@
-# Handover notes (M0, M1 and privacy controls done)
+# Handover notes (M0, M1, privacy controls and M2 part 1 done)
 
 ## Context
 
@@ -137,7 +137,11 @@ Schema change workflow:
 1. Check out `main`, run `npm install`, then `npx nx run-many -t lint typecheck test build check` and the e2e tests.
 2. ~~Build and run the Docker image normally.~~ Done on 2026-10-28: it builds and boots cleanly without the sandbox workarounds, and imports work inside it.
 3. In a real browser, register, add a passkey, sign out and sign back in with it. Install the PWA. Create an invite and use it with `INVITE_ONLY=true`.
-4. Next: **M2 (run clubs)**, built as a separate module per phase 2 of `docs/PRIVACY.md`. Privacy controls (phase 1) are done; see `docs/ARCHITECTURE.md` → Privacy.
+4. Next: **M2 part 2 (coffee)**. Part 1 (clubs, meeting points, repeating runs, RSVPs) is done; see `docs/ARCHITECTURE.md` → Clubs. M2's remaining parts:
+   - **Part 2, coffee:** café menu with options, an order on the RSVP, a saved "usual", an order cutoff, and a big-text summary any member can show the cashier on their phone (should work offline).
+   - **Part 3:** Open-Meteo weather, Web Push reminders (VAPID), cancellation notices, and an in-process scheduler (croner) that also creates runs ahead of time.
+   - **Part 4:** `club_share` snapshots (via `sharedStream`), check-ins, and attendance highlights: streaks, milestones, combined distance. Opt-in, never ranked by speed.
+   - **Known gap:** an owner can't hand the club to someone else yet; they can only delete it.
 
 ## M1 status
 

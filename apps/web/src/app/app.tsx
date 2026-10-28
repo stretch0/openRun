@@ -5,6 +5,10 @@ import { useMe } from '../lib/queries';
 import { ActivityPage } from '../pages/activity';
 import { AddActivityPage } from '../pages/add-activity';
 import { AdminPage } from '../pages/admin';
+import { ClubPage } from '../pages/club';
+import { ClubManagePage } from '../pages/club-manage';
+import { ClubRunPage } from '../pages/club-run';
+import { ClubsPage, JoinClubPage } from '../pages/clubs';
 import { HomePage } from '../pages/home';
 import { LoginPage } from '../pages/login';
 import { PrivacyPage } from '../pages/privacy';
@@ -41,6 +45,11 @@ export function App() {
             <Route path="activities/new" element={<AddActivityPage />} />
             <Route path="activities/:id" element={<ActivityPage />} />
             <Route path="stats" element={<StatsPage />} />
+            <Route path="clubs" element={<ClubsPage />} />
+            <Route path="clubs/join/:code" element={<JoinClubPage />} />
+            <Route path="clubs/:id" element={<ClubPage />} />
+            <Route path="clubs/:id/manage" element={<ClubManagePage />} />
+            <Route path="clubs/:id/runs/:runId" element={<ClubRunPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route element={<RequireUser admin />}>
               <Route path="admin" element={<AdminPage />} />

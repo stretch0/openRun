@@ -18,7 +18,10 @@ export default function ZoneMap({
   zones,
   draft,
   onPick,
+  label = 'Map: tap to place the centre of the zone',
 }: {
+  /** Accessible name; describes what tapping places. */
+  label?: string;
   /** Where to start: the user's latest run, an existing zone, or their location. */
   centre: { lat: number; lng: number } | null;
   zones: Circle[];
@@ -98,7 +101,7 @@ export default function ZoneMap({
       ref={container}
       className="h-64 overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800"
       role="application"
-      aria-label="Map: tap to place the centre of the zone"
+      aria-label={label}
     />
   );
 }

@@ -10,22 +10,22 @@ export function Layout() {
   const { data: me } = useMe();
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-stone-200 bg-stone-50/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur dark:border-stone-800 dark:bg-stone-950/90">
+      <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-stone-200 bg-stone-50/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur dark:border-stone-800 dark:bg-stone-950/90">
         <img src="/favicon.svg" alt="" className="h-7 w-7" />
         <span className="text-lg font-semibold">openRun</span>
       </header>
       <main className="flex-1 space-y-4 px-4 py-4 pb-24">
         <Outlet />
       </main>
-      <nav className="fixed inset-x-0 bottom-0 border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-stone-800 dark:bg-stone-900/95">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-stone-800 dark:bg-stone-900/95">
         <div className="mx-auto flex max-w-2xl">
           <NavLink to="/" end className={tabClass}>
             <Icon d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z" />
             Runs
           </NavLink>
-          <NavLink to="/activities/new" className={tabClass}>
-            <Icon d="M12 5v14M5 12h14" />
-            Add
+          <NavLink to="/clubs" className={tabClass}>
+            <Icon d="M16 19v-1a4 4 0 00-4-4H6a4 4 0 00-4 4v1M9 10a3 3 0 100-6 3 3 0 000 6zm13 9v-1a4 4 0 00-3-3.9M16 4.1a3 3 0 010 5.8" />
+            Clubs
           </NavLink>
           <NavLink to="/stats" className={tabClass}>
             <Icon d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
