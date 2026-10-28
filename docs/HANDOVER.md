@@ -4,7 +4,7 @@
 
 openRun is an open-source, self-hosted running app: run log, training plans, run clubs with RSVPs and coffee orders, Garmin/Strava sync and an MCP server. It is inspired by DuarteSantos8/openGym.
 
-The previous session planned the product and built **M0 (foundation)**. You're picking it up in a new session that has a test environment. The repo is `stretch0/openRun`. All work is on branch **`claude/kind-dirac-4e0hkb`**, single commit `d8861d6 Scaffold openRun M0 foundation`. There is **no `main` branch yet** and no PR.
+The previous session planned the product and built **M0 (foundation)**. You're picking it up in a new session that has a test environment. The repo is `stretch0/openRun`. The default branch is **`main`**; work lands through PRs.
 
 Read first, in this order: `CLAUDE.md`, `docs/ARCHITECTURE.md`, `ROADMAP.md`, `README.md`.
 
@@ -125,7 +125,6 @@ Schema change workflow:
   - The CI and Docker publish workflows have never run on GitHub.
   - The arm64 image has never been built.
   - Passkey registration and sign-in have never been tested in a real browser; e2e only covers password sign-in.
-- **The repo has no `main` branch.** Ask the user whether to create `main` from this branch or open a PR.
 - **Image size:** runtime node_modules is about 250MB uncompressed and could be trimmed.
 - **Deferred from the plan:**
   - Typed API client (Hono RPC); the web currently uses `fetch` plus the shared Zod schemas.
@@ -135,11 +134,10 @@ Schema change workflow:
 
 ## Suggested first steps in the new environment
 
-1. Check out `claude/kind-dirac-4e0hkb`, run `npm install`, then `npx nx run-many -t lint typecheck test build check` and the e2e tests.
+1. Check out `main`, run `npm install`, then `npx nx run-many -t lint typecheck test build check` and the e2e tests.
 2. Build and run the Docker image normally, without the sandbox workarounds, and confirm a clean first boot.
 3. In a real browser, register, add a passkey, sign out and sign back in with it. Install the PWA. Create an invite and use it with `INVITE_ONLY=true`.
-4. Agree with the user how this branch reaches `main`. After that, CI runs for real.
-5. Start **M1 (run log)**:
+4. Start **M1 (run log)**:
    - Create `libs/activity-files` for FIT (fit-file-parser) and GPX parsing.
    - Add upload and manual-entry routes and an activity list and detail page (MapLibre + OSM).
    - Add PB detection in `libs/domain`.
