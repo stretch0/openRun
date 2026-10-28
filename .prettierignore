@@ -3,6 +3,7 @@
 /coverage
 /.nx/cache
 /.nx/workspace-data
-.nx/self-healing/libs/db-migrations/migrations
+/.nx/self-healing
+/libs/db-migrations/migrations
 /.agents
 /LICENSE
