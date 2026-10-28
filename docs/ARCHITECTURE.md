@@ -50,6 +50,10 @@ Libraries are not buildable. They export TypeScript source, and the consuming ap
 - Shoe mileage is the shoe's starting distance plus every run logged in it. Deleting a shoe keeps its runs.
 - `/api/export/activities.json` and `.csv` export runs, laps, best efforts and shoes. CSV cells that a spreadsheet would treat as formulas are prefixed with an apostrophe.
 
+## Privacy
+
+Runs, streams, PBs and shoes are visible only to their owner; admins manage invites and settings, not other people's data. How sharing, clubs and federation will work is in [PRIVACY.md](PRIVACY.md).
+
 ## Auth
 
 - [Better Auth](https://better-auth.com) handles email + password and passkeys (`@better-auth/passkey`). Sessions use cookies.

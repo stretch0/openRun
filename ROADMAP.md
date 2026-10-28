@@ -18,6 +18,16 @@
 - ✅ Stats: this week/month/year, weekly and monthly distance, year heatmap, race predictions (VDOT), shoe mileage
 - ✅ Export as JSON or CSV (original files per run)
 
+### Privacy controls (before M2)
+
+See [docs/PRIVACY.md](docs/PRIVACY.md), phase 1.
+
+- Visibility for each run: private (default), shared with chosen clubs, or public
+- Privacy zones that trim shared tracks near home or work
+- Default sharing settings for new runs
+- Password reset by server command only; no admin reset or impersonation in the app
+- A "who can see what" page
+
 ### M2 – Run clubs
 
 - Clubs with owner, organiser and member roles; join by link or code
@@ -25,7 +35,8 @@
 - RSVP (going / maybe / not going), coffee order with a saved "usual"
 - Order cutoff that locks orders and builds a summary for the café
 - Weather forecast (Open-Meteo), Web Push reminders, cancellations
-- Check-ins (manual, or matched to a synced run), attendance streaks and leaderboard
+- Built as its own module that never reads members' run logs; members choose a sharing level per club (attendance only, summaries, or full)
+- Check-ins (manual, or from a run the member shares), attendance streaks and leaderboard
 
 ### M3 – Sync
 
@@ -41,6 +52,9 @@
 - MCP server at `/mcp` (Streamable HTTP) with personal access tokens
 
 ## After v0.1
+
+- Federation: keep your log on your own instance and join clubs hosted elsewhere ([docs/PRIVACY.md](docs/PRIVACY.md), phase 3)
+- Optional end-to-end encryption of GPS tracks and original files (phase 4)
 
 - In-app AI coach with your own provider (Anthropic, OpenAI, OpenAI-compatible such as Ollama). Changes are proposed, approved and can be undone.
 - Capacitor apps for iOS and Android
