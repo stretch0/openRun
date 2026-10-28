@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { meSchema, type UpdateMe } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
 import { InstallButton } from '../components/install-button';
+import { PrivacySettings } from '../components/privacy-settings';
 import { ShoeSettings } from '../components/shoe-settings';
 import { api } from '../lib/api';
 import { authClient } from '../lib/auth-client';
+import { authErrorMessage } from '../lib/auth-errors';
 import { useMe } from '../lib/queries';
 
 export function SettingsPage() {
@@ -90,9 +92,13 @@ export function SettingsPage() {
         </button>
       </form>
 
+      <PrivacySettings />
+
       <ShoeSettings units={me.units} />
 
       <Passkeys />
+
+      <ChangePassword />
 
       <section className="card space-y-3">
         <h2 className="font-semibold">Export your data</h2>
@@ -188,4 +194,73 @@ function deviceName() {
   if (/Mac/.test(ua)) return 'Mac';
   if (/Windows/.test(ua)) return 'Windows';
   return 'This device';
+}
+
+function ChangePassword() {
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formEl = e.currentTarget;
+    const form = new FormData(formEl);
+    setError(null);
+    setDone(false);
+    setBusy(true);
+    const { error } = await authClient.changePassword({
+      currentPassword: String(form.get('currentPassword')),
+      newPassword: String(form.get('newPassword')),
+      revokeOtherSessions: true,
+    });
+    setBusy(false);
+    if (error) {
+      setError(authErrorMessage(error, 'Could not change your password'));
+      return;
+    }
+    formEl.reset();
+    setDone(true);
+  };
+
+  return (
+    <form onSubmit={onSubmit} className="card space-y-3">
+      <h2 className="font-semibold">Password</h2>
+      <div>
+        <label className="label" htmlFor="currentPassword">
+          Current password
+        </label>
+        <input
+          className="input"
+          id="currentPassword"
+          name="currentPassword"
+          type="password"
+          autoComplete="current-password"
+          required
+        />
+      </div>
+      <div>
+        <label className="label" htmlFor="newPassword">
+          New password
+        </label>
+        <input
+          className="input"
+          id="newPassword"
+          name="newPassword"
+          type="password"
+          autoComplete="new-password"
+          minLength={8}
+          required
+        />
+      </div>
+      <FormError message={error} />
+      {done && (
+        <p className="text-sm text-stone-500">
+          Password changed. Other devices have been signed out.
+        </p>
+      )}
+      <button className="btn-secondary" disabled={busy}>
+        Change password
+      </button>
+    </form>
+  );
 }

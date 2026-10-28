@@ -1,4 +1,4 @@
-# Handover notes (M0 and M1 done)
+# Handover notes (M0, M1 and privacy controls done)
 
 ## Context
 
@@ -137,7 +137,7 @@ Schema change workflow:
 1. Check out `main`, run `npm install`, then `npx nx run-many -t lint typecheck test build check` and the e2e tests.
 2. ~~Build and run the Docker image normally.~~ Done on 2026-10-28: it builds and boots cleanly without the sandbox workarounds, and imports work inside it.
 3. In a real browser, register, add a passkey, sign out and sign back in with it. Install the PWA. Create an invite and use it with `INVITE_ONLY=true`.
-4. Next: **Privacy controls** (phase 1 of `docs/PRIVACY.md`), then **M2 (run clubs)** as a separate module. M1 is done; see below.
+4. Next: **M2 (run clubs)**, built as a separate module per phase 2 of `docs/PRIVACY.md`. Privacy controls (phase 1) are done; see `docs/ARCHITECTURE.md` → Privacy.
 
 ## M1 status
 
@@ -155,11 +155,9 @@ Schema change workflow:
 - API: `/api/shoes` (CRUD with mileage), `/api/stats`, `/api/export/activities.{json,csv}`; activities take a `shoeId` that must belong to the user.
 - Web: Stats tab (totals, weekly/monthly bar chart with table view, year heatmap, predictions, shoe wear), shoe picker on run forms, Shoes and Export in Settings.
 
-**Follow-ups noticed while testing:**
+**Notes from testing:**
 
-- No password reset yet. Decided: a server command only, with no in-app admin reset (see `docs/PRIVACY.md`).
-- The dev API's port 3000 can clash with other local services (AdGuard here); make it configurable and have the Vite proxy follow it.
-- "Invalid origin" on sign-up should say which address to add to `TRUSTED_ORIGINS`.
+- If port 3000 is taken locally, run `PORT=3005 npm run dev`; the Vite proxy follows `PORT`.
 - Testing over HTTPS is easy with `tailscale serve --bg --https=<port> http://127.0.0.1:3300` and `ORIGIN` set to that address.
 
 **Gotchas from M1:**

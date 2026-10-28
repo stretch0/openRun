@@ -3,6 +3,7 @@ import { type FormEvent, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthCard, FormError } from '../components/auth-card';
 import { authClient } from '../lib/auth-client';
+import { authErrorMessage } from '../lib/auth-errors';
 import { useInstance, useMe } from '../lib/queries';
 
 type SignUpInput = Parameters<typeof authClient.signUp.email>[0];
@@ -36,7 +37,7 @@ export function RegisterPage() {
     } as SignUpInput);
     setBusy(false);
     if (error) {
-      setError(error.message ?? 'Could not create your account');
+      setError(authErrorMessage(error, 'Could not create your account'));
       return;
     }
     await queryClient.invalidateQueries();
@@ -48,6 +49,17 @@ export function RegisterPage() {
       {needsSetup && (
         <p className="text-sm text-stone-600 dark:text-stone-400">
           This is a new instance. The first account becomes the administrator.
+        </p>
+      )}
+      {!needsSetup && instance && (
+        <p className="rounded-lg bg-stone-100 px-3 py-2 text-sm text-stone-600 dark:bg-stone-800 dark:text-stone-300">
+          Your runs will be stored on <strong>{instance.name}</strong>
+          {instance.contact ? `, run by ${instance.contact}` : ''}. They're
+          private to you, but whoever runs a server can read what's stored on
+          it.{' '}
+          <Link to="/privacy" className="font-medium text-brand-600">
+            Who can see what
+          </Link>
         </p>
       )}
       <FormError message={error} />

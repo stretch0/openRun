@@ -1,37 +1,13 @@
-import 'maplibre-gl/dist/maplibre-gl.css';
+import { useEffect, useMemo, useRef } from 'react';
+import type { ActivityStream } from '@openrun/schemas';
 import {
+  BRAND,
   type GeoJSONSource,
   LngLatBounds,
   MapLibreMap,
   NavigationControl,
-  type StyleSpecification,
-  setWorkerUrl,
-} from 'maplibre-gl';
-// MapLibre looks for its worker next to its own module, which doesn't exist
-// once bundled; point it at the file Vite emits instead.
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
-import { useEffect, useMemo, useRef } from 'react';
-import type { ActivityStream } from '@openrun/schemas';
-
-setWorkerUrl(workerUrl);
-
-const BRAND = '#ea580c';
-
-/** OpenStreetMap raster tiles; no API key needed. */
-const STYLE: StyleSpecification = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      maxzoom: 19,
-      attribution:
-        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    },
-  },
-  layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
-};
+  OSM_STYLE,
+} from './maplibre';
 
 /**
  * The route on an OSM map, with a dot at the sample `hover` (shared with the
@@ -47,16 +23,24 @@ export default function RouteMap({
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
 
-  const coords = useMemo(
-    () =>
-      stream.lat.flatMap((lat, i) => {
-        const lng = stream.lng[i];
-        return lat != null && lng != null
-          ? [[lng, lat] as [number, number]]
-          : [];
-      }),
-    [stream],
-  );
+  // Separate lines wherever positions are missing (GPS gaps, or privacy
+  // zones in a shared view), so the map never joins across a hidden part.
+  const segments = useMemo(() => {
+    const out: [number, number][][] = [];
+    let current: [number, number][] = [];
+    stream.lat.forEach((lat, i) => {
+      const lng = stream.lng[i];
+      if (lat != null && lng != null) {
+        current.push([lng, lat]);
+      } else if (current.length) {
+        out.push(current);
+        current = [];
+      }
+    });
+    if (current.length) out.push(current);
+    return out;
+  }, [stream]);
+  const coords = useMemo(() => segments.flat(), [segments]);
 
   useEffect(() => {
     if (!container.current || coords.length < 2) return;
@@ -66,7 +50,7 @@ export default function RouteMap({
     );
     const m = new MapLibreMap({
       container: container.current,
-      style: STYLE,
+      style: OSM_STYLE,
       bounds,
       fitBoundsOptions: { padding: 32 },
       attributionControl: { compact: true },
@@ -79,7 +63,7 @@ export default function RouteMap({
         data: {
           type: 'Feature',
           properties: {},
-          geometry: { type: 'LineString', coordinates: coords },
+          geometry: { type: 'MultiLineString', coordinates: segments },
         },
       });
       m.addLayer({
@@ -114,7 +98,7 @@ export default function RouteMap({
       m.remove();
       map.current = null;
     };
-  }, [coords]);
+  }, [coords, segments]);
 
   useEffect(() => {
     const source = map.current?.getSource('hover') as GeoJSONSource | undefined;

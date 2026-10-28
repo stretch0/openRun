@@ -29,7 +29,10 @@
               ".js": ".js"
             }
           },
-          "thirdParty": false
+          "thirdParty": false,
+          "additionalEntryPoints": [
+            "apps/api/src/reset-password.ts"
+          ]
         },
         "configurations": {
           "development": {},

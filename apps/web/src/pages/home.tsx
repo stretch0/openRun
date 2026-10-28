@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDistance, formatDuration, formatPace } from '@openrun/domain';
 import type { ActivitySummary, Me } from '@openrun/schemas';
 import { useActivityList, usePersonalBests } from '../lib/activities';
 import { SPORT_LABELS, formatDate, pbLabel } from '../lib/format';
+import { authClient } from '../lib/auth-client';
 import { useMe } from '../lib/queries';
 
 export function HomePage() {
@@ -22,6 +24,8 @@ export function HomePage() {
           Add run
         </Link>
       </div>
+
+      <PasskeyPrompt />
 
       <PersonalBests me={me} />
 
@@ -70,6 +74,11 @@ function ActivityRow({
       <div className="flex items-baseline justify-between gap-2">
         <p className="truncate font-medium">
           {a.name}
+          {a.visibility === 'clubs' && (
+            <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-normal text-brand-700 dark:bg-brand-500/15 dark:text-brand-500">
+              Shared
+            </span>
+          )}
           {a.sport !== 'run' && (
             <span className="ml-2 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-normal text-stone-600 dark:bg-stone-800 dark:text-stone-300">
               {SPORT_LABELS[a.sport]}
@@ -124,6 +133,54 @@ function PersonalBests({ me }: { me: Me }) {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+const PASSKEY_PROMPT_KEY = 'openrun:passkey-prompt-dismissed';
+
+/**
+ * There's no password reset by email, so nudge people towards a passkey
+ * they're unlikely to lose. Dismissed per device.
+ */
+function PasskeyPrompt() {
+  const { data: passkeys, isPending } = authClient.useListPasskeys();
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(PASSKEY_PROMPT_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  if (isPending || dismissed || (passkeys?.length ?? 0) > 0) return null;
+  const dismiss = () => {
+    try {
+      localStorage.setItem(PASSKEY_PROMPT_KEY, '1');
+    } catch {
+      // Private browsing: it just shows again next time.
+    }
+    setDismissed(true);
+  };
+  return (
+    <section className="card flex items-start gap-3 text-sm">
+      <span aria-hidden className="text-lg">
+        🔑
+      </span>
+      <div className="flex-1">
+        <p className="font-medium">Add a passkey</p>
+        <p className="text-stone-500">
+          Sign in with Face ID, Touch ID or your phone instead of a password,
+          and you won't get locked out if you forget it.
+        </p>
+        <div className="mt-2 flex gap-3">
+          <Link to="/settings" className="font-medium text-brand-600">
+            Add one in Settings
+          </Link>
+          <button className="text-stone-500" onClick={dismiss}>
+            Not now
+          </button>
+        </div>
+      </div>
     </section>
   );
 }

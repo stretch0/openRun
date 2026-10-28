@@ -9,6 +9,7 @@ import {
 } from 'drizzle-orm/sqlite-core';
 import { user } from './auth.js';
 import { id, timestamp, timestamps } from './columns.js';
+import { visibilities } from './privacy.js';
 
 export const activitySources = ['manual', 'file', 'garmin', 'strava'] as const;
 export const sportTypes = [
@@ -48,6 +49,10 @@ export const activity = sqliteTable(
     /** Id in the source system, used to de-duplicate syncs. */
     externalId: text('external_id'),
     sport: text('sport', { enum: sportTypes }).notNull().default('run'),
+    /** Who besides the owner may see it. See docs/PRIVACY.md. */
+    visibility: text('visibility', { enum: visibilities })
+      .notNull()
+      .default('private'),
     name: text('name').notNull(),
     startedAt: timestamp('started_at').notNull(),
     distanceM: real('distance_m').notNull(),

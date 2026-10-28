@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { schema } from '@openrun/db';
 import { toCsv } from '@openrun/domain';
 import { type AuthedEnv, requireUser } from '../context.js';
+import { getPrivacySettings, listZones } from '../privacy.js';
 import { listShoes } from './shoes.js';
 
 function fileName(ext: string) {
@@ -48,12 +49,22 @@ export const exportRoutes = new Hono<AuthedEnv>()
         units: user.units,
         timezone: user.timezone,
       },
+      privacy: {
+        ...getPrivacySettings(db, user.id),
+        zones: listZones(db, user.id).map(({ name, lat, lng, radiusM }) => ({
+          name,
+          lat,
+          lng,
+          radiusM,
+        })),
+      },
       shoes: listShoes(db, user.id),
       activities: activities.map((a) => ({
         id: a.id,
         name: a.name,
         sport: a.sport,
         source: a.source,
+        visibility: a.visibility,
         startedAt: a.startedAt.toISOString(),
         distanceM: a.distanceM,
         durationS: a.durationS,

@@ -21,6 +21,8 @@ const envSchema = z.object({
   /** Built web app to serve. Leave unset in development (Vite serves it). */
   WEB_DIR: z.string().optional(),
   INSTANCE_NAME: z.string().default('openRun'),
+  /** How members can reach whoever runs this instance, e.g. an email address. */
+  INSTANCE_CONTACT: z.string().optional(),
   FIRST_USER_ADMIN: bool.default(true),
   INVITE_ONLY: bool.default(false),
   PASSWORD_LOGIN: bool.default(true),
@@ -61,6 +63,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     migrationsDir: resolve(e.MIGRATIONS_DIR),
     webDir: e.WEB_DIR ? resolve(e.WEB_DIR) : undefined,
     instanceName: e.INSTANCE_NAME,
+    contact: e.INSTANCE_CONTACT?.trim() || null,
     firstUserAdmin: e.FIRST_USER_ADMIN,
     inviteOnly: e.INVITE_ONLY,
     passwordLogin: e.PASSWORD_LOGIN,

@@ -7,6 +7,7 @@ import { AddActivityPage } from '../pages/add-activity';
 import { AdminPage } from '../pages/admin';
 import { HomePage } from '../pages/home';
 import { LoginPage } from '../pages/login';
+import { PrivacyPage } from '../pages/privacy';
 import { RegisterPage } from '../pages/register';
 import { SettingsPage } from '../pages/settings';
 import { StatsPage } from '../pages/stats';
@@ -33,6 +34,7 @@ export function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route element={<RequireUser />}>
           <Route element={<Layout />}>
             <Route index element={<HomePage />} />

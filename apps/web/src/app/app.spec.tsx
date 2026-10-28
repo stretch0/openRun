@@ -31,6 +31,7 @@ describe('App', () => {
               version: '0.0.1',
               inviteOnly: false,
               passwordLogin: true,
+              contact: null,
               needsSetup: true,
             })
           : respond({ error: 'Unauthorized' }, 401),

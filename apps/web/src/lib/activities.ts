@@ -39,12 +39,19 @@ export function useActivity(id: string) {
   });
 }
 
-export function useActivityStream(id: string, enabled: boolean) {
+/** `shared` is what others would see: privacy zones applied. */
+export function useActivityStream(
+  id: string,
+  enabled: boolean,
+  view: 'owner' | 'shared' = 'owner',
+) {
   return useQuery({
-    queryKey: ['activities', id, 'stream'],
-    queryFn: () => api(`/activities/${id}/stream`, activityStreamSchema),
+    queryKey: ['activities', id, 'stream', view],
+    queryFn: () =>
+      api(`/activities/${id}/stream?view=${view}`, activityStreamSchema),
     enabled,
-    staleTime: Infinity,
+    // The owner's view never changes; the shared one follows privacy settings.
+    staleTime: view === 'owner' ? Infinity : 0,
   });
 }
 

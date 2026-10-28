@@ -157,6 +157,70 @@ test.describe('signed in', () => {
   });
 });
 
+test.describe('privacy', () => {
+  test.use({ storageState: authFile });
+
+  test('shares nothing by default and trims shared maps', async ({ page }) => {
+    await page.goto('/activities/new');
+    await page.getByLabel('Activity files').setInputFiles({
+      name: 'private.gpx',
+      mimeType: 'application/gpx+xml',
+      buffer: Buffer.from(gpxRun().replace('Riverside loop', 'Private loop')),
+    });
+    await page
+      .getByRole('list', { name: 'Import results' })
+      .getByRole('link', { name: 'View' })
+      .click();
+    await expect(
+      page.getByRole('heading', { name: 'Private loop' }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Who can see this run')).toHaveValue(
+      'private',
+    );
+
+    // Maps aren't shared until the owner allows it.
+    await page.getByRole('button', { name: 'What clubs see' }).click();
+    await expect(
+      page.getByText('Clubs see no map for this run.'),
+    ).toBeVisible();
+    const runUrl = page.url();
+
+    await page.goto('/settings');
+    await page.getByLabel('Who can see new runs').selectOption('clubs');
+    await page
+      .getByRole('checkbox', { name: /Include the map when sharing/ })
+      .check();
+    await page.getByRole('button', { name: 'Add a privacy zone' }).click();
+    const zoneMap = page.getByRole('application', { name: /place the centre/ });
+    await expect(zoneMap.locator('canvas')).toBeVisible();
+    await zoneMap.click();
+    await page.getByRole('button', { name: 'Save zone' }).click();
+    await expect(page.getByText('Home · 500 m')).toBeVisible();
+
+    await page.goto(runUrl);
+    await page.getByRole('button', { name: 'What clubs see' }).click();
+    await expect(
+      page.getByRole('img', { name: 'Map of the route' }),
+    ).toBeVisible();
+    await expect(page.getByText('Clubs see no map for this run.')).toBeHidden();
+
+    // New runs now default to shared.
+    await page.goto('/activities/new');
+    await expect(page.getByLabel('Who can see it')).toHaveValue('clubs');
+  });
+
+  test('explains who can see what before signing up', async ({ browser }) => {
+    const page = await browser.newPage({ storageState: undefined });
+    await page.goto('/register');
+    await page.getByRole('link', { name: 'Who can see what' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Who can see what' }),
+    ).toBeVisible();
+    await expect(page.getByText(/There's no reset by email/)).toBeVisible();
+    await page.close();
+  });
+});
+
 test('serves an installable PWA', async ({ page, request }) => {
   const manifest = await (await request.get('/manifest.webmanifest')).json();
   expect(manifest).toMatchObject({ name: 'openRun', display: 'standalone' });

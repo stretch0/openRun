@@ -3,6 +3,7 @@ import { type FormEvent, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { AuthCard, FormError } from '../components/auth-card';
 import { authClient } from '../lib/auth-client';
+import { authErrorMessage } from '../lib/auth-errors';
 import { useInstance, useMe } from '../lib/queries';
 
 export function LoginPage() {
@@ -31,7 +32,7 @@ export function LoginPage() {
       password: String(form.get('password')),
     });
     setBusy(false);
-    if (error) setError(error.message ?? 'Could not sign in');
+    if (error) setError(authErrorMessage(error, 'Could not sign in'));
     else await signedIn();
   };
 
@@ -39,7 +40,7 @@ export function LoginPage() {
     setError(null);
     const result = await authClient.signIn.passkey();
     if (result?.error)
-      setError(result.error.message ?? 'Passkey sign-in failed');
+      setError(authErrorMessage(result.error, 'Passkey sign-in failed'));
     else await signedIn();
   };
 

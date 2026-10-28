@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { visibilitySchema } from './privacy.js';
 
 export const sportSchema = z.enum([
   'run',
@@ -22,6 +23,7 @@ export const activitySummarySchema = z.object({
   name: z.string(),
   sport: sportSchema,
   source: activitySourceSchema,
+  visibility: visibilitySchema,
   startedAt: z.iso.datetime(),
   distanceM: z.number(),
   durationS: z.number(),
@@ -107,11 +109,20 @@ export const createActivitySchema = z.object({
   rpe: z.number().int().min(1).max(10).nullish(),
   notes: z.string().max(10_000).nullish(),
   shoeId: z.string().nullish(),
+  /** Defaults to the user's privacy settings. */
+  visibility: visibilitySchema.optional(),
 });
 export type CreateActivity = z.infer<typeof createActivitySchema>;
 
 export const updateActivitySchema = createActivitySchema
-  .pick({ name: true, sport: true, rpe: true, notes: true, shoeId: true })
+  .pick({
+    name: true,
+    sport: true,
+    rpe: true,
+    notes: true,
+    shoeId: true,
+    visibility: true,
+  })
   .partial();
 export type UpdateActivity = z.infer<typeof updateActivitySchema>;
 

@@ -27,6 +27,8 @@ export const instanceInfoSchema = z.object({
   version: z.string(),
   inviteOnly: z.boolean(),
   passwordLogin: z.boolean(),
+  /** How to reach whoever runs this instance, shown before sign-up. */
+  contact: z.string().nullable(),
   /** True until the first account has been created. */
   needsSetup: z.boolean(),
 });

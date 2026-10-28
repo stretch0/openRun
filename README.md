@@ -2,9 +2,9 @@
 
 An open-source, self-hosted running app: log your runs, plan your training, sync with Garmin, connect AI assistants over MCP, and organise your run club (including the coffee order).
 
-One instance serves many people, so a run club can host it for its members. It also works fine for one person. It's inspired by [openGym](https://github.com/DuarteSantos8/openGym).
+Your runs are yours: they're private unless you choose to share them, and clubs only ever see what you send them. Run it for yourself, or for friends and family who trust you with their data. It's inspired by [openGym](https://github.com/DuarteSantos8/openGym).
 
-> **Status: early development.** The foundation is in place: accounts, passkeys, invites, the installable PWA and the Docker image. Run logging, run clubs, Garmin sync and MCP are next. See [ROADMAP.md](ROADMAP.md).
+> **Status: early development.** Accounts, the run log, stats and privacy controls work. Run clubs, Garmin sync and MCP are next. See [ROADMAP.md](ROADMAP.md).
 
 ## Features
 
@@ -13,7 +13,8 @@ One instance serves many people, so a run club can host it for its members. It a
 | Accounts with passkeys or password, first user becomes admin, invite-only mode | ✅           |
 | Installable PWA (works offline from cache, update prompt)                      | ✅           |
 | Single Docker image with SQLite, migrations applied on start                   | ✅           |
-| Run log: FIT/GPX import, maps, splits, PBs, shoes, stats                       | Planned (M1) |
+| Run log: FIT/GPX import, maps, splits, PBs, shoes, stats, export               | ✅           |
+| Privacy: private by default, sharing settings, privacy zones                   | ✅           |
 | Run clubs: repeating runs, RSVPs, coffee orders, weather, reminders            | Planned (M2) |
 | Garmin Connect and Strava sync                                                 | Planned (M3) |
 | Training plans, push workouts to Garmin, Runna via Garmin, MCP server          | Planned (M4) |
@@ -35,6 +36,25 @@ Open the URL. The first account you create becomes the admin. Everything is stor
 
 Passkeys need HTTPS (or `localhost`), so put openRun behind a reverse proxy such as Caddy or Traefik for anything beyond local use. When you do, set `TRUST_PROXY=true`. All settings are listed in [.env.example](.env.example).
 
+### Forgotten passwords
+
+There's no password reset by email, and admins can't reset passwords from inside the app. Whoever runs the server can:
+
+```bash
+docker compose exec openrun node reset-password.js someone@example.com
+```
+
+It prints a temporary password and signs that person out everywhere. Send it to them privately; they can change it in Settings.
+
+## Your data and privacy
+
+- Runs are visible only to their owner unless they choose to share them.
+- Shared runs show the route only if the owner allows it, with their privacy zones cut out.
+- Admins manage invites and settings; they can't see other people's runs.
+- Whoever runs the server can read what's stored on it, as with any server. Set `INSTANCE_CONTACT` so members know who that is, and only host data for people who trust you.
+
+The full design, including plans for clubs that connect separate instances, is in [docs/PRIVACY.md](docs/PRIVACY.md).
+
 ## Development
 
 You need Node 22 or later.
@@ -45,6 +65,12 @@ npm run dev
 ```
 
 The API runs on http://localhost:3000 and the PWA on http://localhost:4200, which proxies `/api` to the API. The development database is created at `./data/openrun.db`.
+
+If something else already uses port 3000, pick another for the API; the PWA follows it:
+
+```bash
+PORT=3005 npm run dev
+```
 
 | Command                                        | What it does                                             |
 | ---------------------------------------------- | -------------------------------------------------------- |

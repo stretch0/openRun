@@ -17,6 +17,7 @@ export const instanceRoutes = new Hono<AppEnv>().get('/', (c) => {
     version,
     inviteOnly: config.inviteOnly,
     passwordLogin: config.passwordLogin,
+    contact: config.contact,
     needsSetup: users === 0,
   });
 });
