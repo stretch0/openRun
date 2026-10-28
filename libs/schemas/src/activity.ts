@@ -68,6 +68,7 @@ export const activitySchema = activitySummarySchema.extend({
   avgCadence: z.number().nullable(),
   rpe: z.number().nullable(),
   notes: z.string().nullable(),
+  shoeId: z.string().nullable(),
   hasStream: z.boolean(),
   hasFile: z.boolean(),
   laps: z.array(lapSchema),
@@ -105,11 +106,12 @@ export const createActivitySchema = z.object({
   avgHeartRate: z.number().int().min(20).max(250).nullish(),
   rpe: z.number().int().min(1).max(10).nullish(),
   notes: z.string().max(10_000).nullish(),
+  shoeId: z.string().nullish(),
 });
 export type CreateActivity = z.infer<typeof createActivitySchema>;
 
 export const updateActivitySchema = createActivitySchema
-  .pick({ name: true, sport: true, rpe: true, notes: true })
+  .pick({ name: true, sport: true, rpe: true, notes: true, shoeId: true })
   .partial();
 export type UpdateActivity = z.infer<typeof updateActivitySchema>;
 

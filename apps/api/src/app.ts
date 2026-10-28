@@ -10,8 +10,11 @@ import type { Config } from './config.js';
 import type { AppEnv } from './context.js';
 import { activityRoutes, personalBestRoutes } from './routes/activities.js';
 import { adminRoutes } from './routes/admin.js';
+import { exportRoutes } from './routes/export.js';
 import { instanceRoutes } from './routes/instance.js';
 import { meRoutes } from './routes/me.js';
+import { shoeRoutes } from './routes/shoes.js';
+import { statsRoutes } from './routes/stats.js';
 
 export function createApp({
   db,
@@ -43,6 +46,9 @@ export function createApp({
   app.route('/api/admin', adminRoutes);
   app.route('/api/activities', activityRoutes);
   app.route('/api/personal-bests', personalBestRoutes);
+  app.route('/api/shoes', shoeRoutes);
+  app.route('/api/stats', statsRoutes);
+  app.route('/api/export', exportRoutes);
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));
 
   if (config.webDir) serveWeb(app, config.webDir);

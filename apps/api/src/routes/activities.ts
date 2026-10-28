@@ -132,6 +132,9 @@ export const activityRoutes = new Hono<AuthedEnv>()
   )
   .post('/', zValidator('json', createActivitySchema), (c) => {
     const input = c.req.valid('json');
+    if (input.shoeId && !ownsShoe(c, input.shoeId)) {
+      return c.json({ error: 'Unknown shoe' }, 400);
+    }
     const db = c.get('db');
     const row = db.transaction((tx) => {
       const [row] = tx
@@ -191,6 +194,10 @@ export const activityRoutes = new Hono<AuthedEnv>()
   .patch('/:id', zValidator('json', updateActivitySchema), (c) => {
     const existing = findOwn(c, c.req.param('id'));
     if (!existing) return c.json({ error: 'Not found' }, 404);
+    const { shoeId } = c.req.valid('json');
+    if (shoeId && !ownsShoe(c, shoeId)) {
+      return c.json({ error: 'Unknown shoe' }, 400);
+    }
     const db = c.get('db');
     const row = db.transaction((tx) => {
       const [row] = tx
@@ -248,6 +255,22 @@ export const personalBestRoutes = new Hono<AuthedEnv>()
 
 type Ctx = Context<AuthedEnv>;
 
+function ownsShoe(c: Ctx, shoeId: string) {
+  return Boolean(
+    c
+      .get('db')
+      .select({ id: schema.shoe.id })
+      .from(schema.shoe)
+      .where(
+        and(
+          eq(schema.shoe.id, shoeId),
+          eq(schema.shoe.userId, c.get('user').id),
+        ),
+      )
+      .get(),
+  );
+}
+
 function findOwn(c: Ctx, id: string) {
   return c
     .get('db')
@@ -278,6 +301,7 @@ function toActivity(c: Ctx, row: ActivityRow): Activity {
     avgCadence: row.avgCadence,
     rpe: row.rpe,
     notes: row.notes,
+    shoeId: row.shoeId,
     hasStream: stream !== null,
     hasFile: row.originalFile !== null,
     laps: laps.map((l) => ({

@@ -27,6 +27,10 @@ export function Layout() {
             <Icon d="M12 5v14M5 12h14" />
             Add
           </NavLink>
+          <NavLink to="/stats" className={tabClass}>
+            <Icon d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+            Stats
+          </NavLink>
           {me?.role === 'admin' && (
             <NavLink to="/admin" className={tabClass}>
               <Icon d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z" />

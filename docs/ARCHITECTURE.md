@@ -46,6 +46,10 @@ Libraries are not buildable. They export TypeScript source, and the consuming ap
 - Samples are stored per activity in `activity_stream` as gzipped column-wise JSON. The API downsamples them for maps and charts and computes splits from them in the user's units.
 - `personal_best` holds the fastest effort over each standard distance _per activity_. A PB is a user's fastest row, so deleting or editing an activity needs no recalculation. Walks and other non-running sports don't get efforts.
 
+- Stats (`/api/stats`) count running sports only. Periods use the user's time zone, weeks start on Monday, and race predictions use the best VDOT from efforts of a mile or more in the last 120 days.
+- Shoe mileage is the shoe's starting distance plus every run logged in it. Deleting a shoe keeps its runs.
+- `/api/export/activities.json` and `.csv` export runs, laps, best efforts and shoes. CSV cells that a spreadsheet would treat as formulas are prefixed with an apostrophe.
+
 ## Auth
 
 - [Better Auth](https://better-auth.com) handles email + password and passkeys (`@better-auth/passkey`). Sessions use cookies.
