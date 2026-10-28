@@ -40,3 +40,23 @@ export function formatPace(
 export function formatDistance(metres: number, units: Units): string {
   return `${distanceIn(metres, units).toFixed(2)} ${units === 'metric' ? 'km' : 'mi'}`;
 }
+
+/** Metres from a distance in km or miles. */
+export function metresFrom(distance: number, units: Units): number {
+  return units === 'metric' ? distance * 1000 : distance * METRES_PER_MILE;
+}
+
+/**
+ * Parses "h:mm:ss", "mm:ss" or plain minutes ("45") into seconds.
+ * Returns null for anything else.
+ */
+export function parseDuration(input: string): number | null {
+  const parts = input.trim().split(':');
+  if (parts.length > 3 || parts.some((p) => !/^\d+(\.\d+)?$/.test(p))) {
+    return null;
+  }
+  const nums = parts.map(Number);
+  if (nums.length === 1) return Math.round(nums[0] * 60);
+  if (nums.slice(1).some((n) => n >= 60)) return null;
+  return Math.round(nums.reduce((total, n) => total * 60 + n, 0));
+}

@@ -45,6 +45,8 @@ export default defineConfig(() => ({
         ],
       },
       workbox: {
+        // .mjs covers MapLibre's worker, so maps work offline too.
+        globPatterns: ['**/*.{js,mjs,css,html}'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
@@ -69,6 +71,8 @@ export default defineConfig(() => ({
     outDir: './dist',
     emptyOutDir: true,
     reportCompressedSize: true,
+    // MapLibre is a ~1 MB chunk, loaded lazily on activity pages only.
+    chunkSizeWarningLimit: 1100,
     commonjsOptions: {
       transformMixedEsModules: true,
     },

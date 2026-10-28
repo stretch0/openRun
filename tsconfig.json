@@ -23,6 +23,9 @@
     },
     {
       "path": "./libs/db-migrations"
+    },
+    {
+      "path": "./libs/activity-files"
     }
   ],
   "compilerOptions": {}

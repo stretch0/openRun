@@ -19,7 +19,10 @@ export async function api<T extends z.ZodType>(
     credentials: 'include',
     ...init,
     headers: {
-      ...(init.body ? { 'content-type': 'application/json' } : {}),
+      // FormData sets its own multipart content type.
+      ...(typeof init.body === 'string'
+        ? { 'content-type': 'application/json' }
+        : {}),
       ...init.headers,
     },
   });

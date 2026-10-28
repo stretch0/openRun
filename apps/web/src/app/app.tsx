@@ -2,6 +2,8 @@ import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { Layout } from '../components/layout';
 import { UpdatePrompt } from '../components/update-prompt';
 import { useMe } from '../lib/queries';
+import { ActivityPage } from '../pages/activity';
+import { AddActivityPage } from '../pages/add-activity';
 import { AdminPage } from '../pages/admin';
 import { HomePage } from '../pages/home';
 import { LoginPage } from '../pages/login';
@@ -33,6 +35,8 @@ export function App() {
         <Route element={<RequireUser />}>
           <Route element={<Layout />}>
             <Route index element={<HomePage />} />
+            <Route path="activities/new" element={<AddActivityPage />} />
+            <Route path="activities/:id" element={<ActivityPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route element={<RequireUser admin />}>
               <Route path="admin" element={<AdminPage />} />

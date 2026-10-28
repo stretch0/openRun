@@ -2,7 +2,9 @@ import {
   formatDistance,
   formatDuration,
   formatPace,
+  metresFrom,
   paceSeconds,
+  parseDuration,
 } from './units.js';
 
 describe('units', () => {
@@ -22,5 +24,19 @@ describe('units', () => {
   it('formats distances', () => {
     expect(formatDistance(10000, 'metric')).toBe('10.00 km');
     expect(formatDistance(1609.344, 'imperial')).toBe('1.00 mi');
+  });
+
+  it('parses durations typed by hand', () => {
+    expect(parseDuration('45')).toBe(2700);
+    expect(parseDuration('25:30')).toBe(1530);
+    expect(parseDuration(' 1:02:03 ')).toBe(3723);
+    expect(parseDuration('1:75')).toBeNull();
+    expect(parseDuration('abc')).toBeNull();
+    expect(parseDuration('')).toBeNull();
+  });
+
+  it('converts distances to metres', () => {
+    expect(metresFrom(5, 'metric')).toBe(5000);
+    expect(metresFrom(1, 'imperial')).toBe(1609.344);
   });
 });
