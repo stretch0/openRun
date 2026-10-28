@@ -18,15 +18,15 @@
 - ✅ Stats: this week/month/year, weekly and monthly distance, year heatmap, race predictions (VDOT), shoe mileage
 - ✅ Export as JSON or CSV (original files per run)
 
-### Privacy controls (before M2)
+### Privacy controls ✅
 
 See [docs/PRIVACY.md](docs/PRIVACY.md), phase 1.
 
-- Visibility for each run: private (default), shared with chosen clubs, or public
-- Privacy zones that trim shared tracks near home or work
+- Visibility for each run: private (default) or shared with chosen clubs
+- Privacy zones (500 m by default, randomised edge) that trim shared tracks near home or work
 - Default sharing settings for new runs
 - Password reset by server command only; no admin reset or impersonation in the app
-- A "who can see what" page
+- A "who can see what" page, and the sign-up page names who stores your data
 
 ### M2 – Run clubs
 
@@ -36,7 +36,8 @@ See [docs/PRIVACY.md](docs/PRIVACY.md), phase 1.
 - Order cutoff that locks orders and builds a summary for the café
 - Weather forecast (Open-Meteo), Web Push reminders, cancellations
 - Built as its own module that never reads members' run logs; members choose a sharing level per club (attendance only, summaries, or full)
-- Check-ins (manual, or from a run the member shares), attendance streaks and leaderboard
+- Check-ins (manual, or from a run the member shares)
+- Fun attendance highlights, never speed rankings: streaks, milestones and the club's combined distance, opt-in per member
 
 ### M3 – Sync
 

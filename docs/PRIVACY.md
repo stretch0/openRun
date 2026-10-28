@@ -1,6 +1,6 @@
 # Privacy and data ownership
 
-**Status:** proposed, October 2026. Supersedes the M0 assumption that "one instance serves many users, for example a club hosts it".
+**Status:** accepted, October 2026. Supersedes the M0 assumption that "one instance serves many users, for example a club hosts it".
 
 ## Why this matters
 
@@ -65,12 +65,12 @@ Data is encrypted in the browser and the server only stores ciphertext.
 
 ### Phase 1: privacy controls (before M2)
 
-- **Visibility for each run:** `private` (the default), `clubs` (shared with clubs the user picks) or `public`.
-- **Privacy zones:** circles around places such as home or work. Anything shared beyond the owner has the track inside a zone trimmed, and the start and end are hidden. The owner always sees the full track.
+- **Visibility for each run:** `private` (the default) or `clubs` (shared with clubs the user picks). `public` waits until after v0.1.
+- **Privacy zones:** circles around places such as home or work, 500 m by default (200 m to 1 km). Each zone's edge is randomised once when it's created: the centre is shifted and the radius grown by a random amount, always still covering the whole circle the user drew, so overlaying shared tracks doesn't reveal the centre. Anything shared beyond the owner has the track inside a zone trimmed, and the start and end are hidden. The owner always sees the full track.
 - **Default sharing settings:** the visibility a newly imported run gets, and whether sharing includes the map or just the numbers.
 - **Account recovery without admin power:** passwords are reset only with a server command (`reset-password <email>`), run by whoever operates the instance. There's no admin reset or "sign in as" in the app. A banner encourages adding a passkey.
 - **Admin role trimmed:** admins manage invites and instance settings. They don't see other users' runs, stats or shoes, and the docs say so.
-- **Docs:** a short "who can see what" page in the app and in the README.
+- **Docs:** a short "who can see what" page in the app and in the README. The sign-up page says which instance stores your data and how to contact its admin, before anything is uploaded.
 
 ### Phase 2: M2 run clubs, built as a separate module
 
@@ -79,7 +79,8 @@ The club module never queries `activity`, `activity_stream` or `personal_best`. 
 - **Members** by identity: user id and display name, and later `user@instance`.
 - **Club records:** clubs, locations, run series, runs, RSVPs, menu and coffee orders, from the draft model in `HANDOVER.md`.
 - **Shares:** a `club_share` row is a **snapshot** a member chose to send to a club. It holds the date, distance, time, pace and optionally a privacy-zoned, downsampled track. It is copied, not joined, so changing or deleting the original run doesn't silently change what the club sees, and the member can withdraw a share.
-- **Check-ins:** a check-in is either manual or points to a `club_share`. Attendance streaks and leaderboards are worked out from check-ins and shares only.
+- **Check-ins:** a check-in is either manual or points to a `club_share`.
+- **Highlights, not rankings:** clubs celebrate turning up, never speed. Attendance streaks, milestones ("10th Saturday run", "ran in the rain") and the club's combined distance. There are no pace or distance rankings between members, and a member appears in highlights only if they opt in.
 
 Each club member has a **sharing level**:
 
@@ -116,9 +117,9 @@ If people still want protection from their own host, encrypt `activity_stream` a
 - **M3 (sync) and M4 (plans and MCP):** unchanged. They run on the runner's own instance, which is the point.
 - **After v0.1:** federation (phase 3), then optional end-to-end encryption (phase 4).
 
-## Open questions
+## Decisions on the open questions
 
-1. Should `public` exist at all in v0.1, or wait for federation?
-2. Default privacy zone radius: 200 m, 500 m or 1 km, and should the trim also be randomised so it can't be reversed?
-3. Should leaderboards be opt-in per member, even at the "Summaries" level?
-4. How should a shared instance (many members, one host) be presented, so members understand the host can read what's stored there?
+1. **Public runs:** not in v0.1. Runs are private or shared with clubs.
+2. **Privacy zones:** 500 m by default, adjustable from 200 m to 1 km, with a randomised edge.
+3. **Leaderboards:** there are none in the competitive sense. Clubs show attendance highlights that members opt into, and nothing ranks people by speed or distance.
+4. **Telling members who holds their data:** on the sign-up page and in "who can see what", naming the instance and how to contact its admin.

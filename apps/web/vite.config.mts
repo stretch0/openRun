@@ -4,6 +4,9 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// The API's port in development; set PORT to move both off 3000.
+const api = `http://localhost:${process.env['PORT'] ?? 3000}`;
+
 export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/web',
@@ -11,12 +14,12 @@ export default defineConfig(() => ({
     port: 4200,
     host: 'localhost',
     // The API runs separately in development; see README.
-    proxy: { '/api': 'http://localhost:3000' },
+    proxy: { '/api': api },
   },
   preview: {
     port: 4200,
     host: 'localhost',
-    proxy: { '/api': 'http://localhost:3000' },
+    proxy: { '/api': api },
   },
   plugins: [
     react(),

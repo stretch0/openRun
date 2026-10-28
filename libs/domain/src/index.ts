@@ -5,3 +5,4 @@ export * from './names.js';
 export * from './vdot.js';
 export * from './totals.js';
 export * from './csv.js';
+export * from './privacy.js';

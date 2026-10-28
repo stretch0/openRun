@@ -1,11 +1,17 @@
 import { type DragEvent, type FormEvent, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { metresFrom, parseDuration } from '@openrun/domain';
-import { type Sport, sportSchema } from '@openrun/schemas';
+import {
+  type Sport,
+  type Visibility,
+  sportSchema,
+  visibilitySchema,
+} from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
 import { ShoeSelect } from '../components/shoe-settings';
 import { useCreateActivity, useImportFiles } from '../lib/activities';
 import { SPORT_LABELS } from '../lib/format';
+import { VISIBILITY_LABELS, usePrivacySettings } from '../lib/privacy';
 import { useMe } from '../lib/queries';
 
 export function AddActivityPage() {
@@ -124,6 +130,7 @@ function nowLocal() {
 function ManualEntry() {
   const { data: me } = useMe();
   const create = useCreateActivity();
+  const { data: privacy } = usePrivacySettings();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const units = me?.units ?? 'metric';
@@ -153,6 +160,7 @@ function ManualEntry() {
         rpe: optionalNumber('rpe'),
         notes: field('notes') || null,
         shoeId: field('shoeId') || null,
+        visibility: field('visibility') as Visibility,
       },
       { onSuccess: (a) => navigate(`/activities/${a.id}`) },
     );
@@ -219,6 +227,25 @@ function ManualEntry() {
           max="10"
         />
         <ShoeSelect />
+        <div>
+          <label className="label" htmlFor="visibility">
+            Who can see it
+          </label>
+          <select
+            className="input"
+            id="visibility"
+            name="visibility"
+            // Settings load after the form; remount so the default applies.
+            key={privacy?.defaultVisibility}
+            defaultValue={privacy?.defaultVisibility ?? 'private'}
+          >
+            {visibilitySchema.options.map((v) => (
+              <option key={v} value={v}>
+                {VISIBILITY_LABELS[v]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <div>
         <label className="label" htmlFor="notes">

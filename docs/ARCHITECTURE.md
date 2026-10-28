@@ -52,7 +52,13 @@ Libraries are not buildable. They export TypeScript source, and the consuming ap
 
 ## Privacy
 
-Runs, streams, PBs and shoes are visible only to their owner; admins manage invites and settings, not other people's data. How sharing, clubs and federation will work is in [PRIVACY.md](PRIVACY.md).
+The rules are in [PRIVACY.md](PRIVACY.md). How they're implemented:
+
+- Runs, streams, PBs and shoes are only ever queried with the signed-in user's id. Admin routes cover invites only.
+- `activity.visibility` is `private` (the default) or `clubs`. New runs take the user's `privacy_settings.default_visibility`; a missing settings row means the defaults.
+- A `privacy_zone` keeps the circle the user drew (`lat`, `lng`, `radius_m`) and a randomised circle (`trim_*`) chosen once when it's created. Only the randomised one is used for trimming, and it's never sent to the browser.
+- `sharedStream()` in `apps/api/src/privacy.ts` is the one place that turns a stream into what others may see: no positions unless the owner shares maps, and none inside a zone. `GET /api/activities/:id/stream?view=shared` lets the owner preview it; M2 will use the same function.
+- Passwords are reset only with `reset-password.js` (`apps/api/src/reset-password.ts`, built next to `main.js`). It sets a temporary password and deletes the user's sessions.
 
 ## Auth
 

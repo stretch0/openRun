@@ -13,6 +13,7 @@ import {
   type ActivityList,
   type ActivitySummary,
   createActivitySchema,
+  bulkVisibilitySchema,
   type ImportResult,
   type PersonalBest,
   updateActivitySchema,
@@ -31,6 +32,7 @@ import {
   writeDataFile,
 } from '../activity-store.js';
 import { type AuthedEnv, requireUser } from '../context.js';
+import { getPrivacySettings, sharedStream } from '../privacy.js';
 
 type ActivityRow = typeof schema.activity.$inferSelect;
 
@@ -44,6 +46,7 @@ function toSummary(a: ActivityRow): ActivitySummary {
     name: a.name,
     sport: a.sport,
     source: a.source,
+    visibility: a.visibility,
     startedAt: a.startedAt.toISOString(),
     distanceM: a.distanceM,
     durationS: a.durationS,
@@ -143,6 +146,9 @@ export const activityRoutes = new Hono<AuthedEnv>()
           ...input,
           userId: c.get('user').id,
           source: 'manual',
+          visibility:
+            input.visibility ??
+            getPrivacySettings(db, c.get('user').id).defaultVisibility,
           startedAt: new Date(input.startedAt),
           elapsedS: input.durationS,
         })
@@ -164,6 +170,8 @@ export const activityRoutes = new Hono<AuthedEnv>()
       'query',
       z.object({
         points: z.coerce.number().int().min(10).max(5000).default(1000),
+        /** `shared` previews what others see: privacy zones applied. */
+        view: z.enum(['owner', 'shared']).default('owner'),
       }),
     ),
     (c) => {
@@ -171,7 +179,12 @@ export const activityRoutes = new Hono<AuthedEnv>()
       if (!row) return c.json({ error: 'Not found' }, 404);
       const stream = loadStream(c.get('db'), row.id);
       if (!stream) return c.json({ error: 'No stream' }, 404);
-      return c.json(downsample(stream, c.req.valid('query').points));
+      const { points, view } = c.req.valid('query');
+      const visible =
+        view === 'shared'
+          ? sharedStream(c.get('db'), row.userId, stream)
+          : stream;
+      return c.json(downsample(visible, points));
     },
   )
   .get('/:id/file', (c) => {
@@ -190,6 +203,16 @@ export const activityRoutes = new Hono<AuthedEnv>()
       'content-type': 'application/octet-stream',
       'content-disposition': `attachment; filename="${fileName}"`,
     });
+  })
+  .patch('/visibility', zValidator('json', bulkVisibilitySchema), (c) => {
+    const changed = c
+      .get('db')
+      .update(schema.activity)
+      .set({ visibility: c.req.valid('json').visibility })
+      .where(eq(schema.activity.userId, c.get('user').id))
+      .returning({ id: schema.activity.id })
+      .all();
+    return c.json({ updated: changed.length });
   })
   .patch('/:id', zValidator('json', updateActivitySchema), (c) => {
     const existing = findOwn(c, c.req.param('id'));
@@ -372,6 +395,7 @@ async function importFile(c: Ctx, file: File): Promise<ImportResult> {
         defaultActivityName(parsed.startedAt, user.timezone, parsed.sport),
       hash,
       originalFile,
+      visibility: getPrivacySettings(db, user.id).defaultVisibility,
     });
   } catch (e) {
     removeDataFile(dataDir, originalFile);

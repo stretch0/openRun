@@ -11,6 +11,8 @@ import {
   type Me,
   type Sport,
   sportSchema,
+  type Visibility,
+  visibilitySchema,
 } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
 import { ShoeSelect } from '../components/shoe-settings';
@@ -24,6 +26,7 @@ import {
 import { ApiError } from '../lib/api';
 import { SPORT_LABELS, formatDateTime, ordinal, pbLabel } from '../lib/format';
 import { useMe } from '../lib/queries';
+import { VISIBILITY_LABELS } from '../lib/privacy';
 import { useShoes } from '../lib/stats';
 
 const RouteMap = lazy(() => import('../components/route-map'));
@@ -32,7 +35,8 @@ export function ActivityPage() {
   const { id = '' } = useParams();
   const { data: me } = useMe();
   const activity = useActivity(id);
-  const stream = useActivityStream(id, activity.data?.hasStream ?? false);
+  const [view, setView] = useState<'owner' | 'shared'>('owner');
+  const stream = useActivityStream(id, activity.data?.hasStream ?? false, view);
   const [hover, setHover] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
 
@@ -65,6 +69,7 @@ export function ActivityPage() {
                 {formatDateTime(a.startedAt, me.timezone)} ·{' '}
                 {SPORT_LABELS[a.sport]}
               </p>
+              <VisibilityPicker activity={a} />
             </div>
             <button
               className="btn-secondary shrink-0"
@@ -86,6 +91,17 @@ export function ActivityPage() {
 
       <BestEfforts activity={a} />
 
+      {a.hasStream && <ViewToggle view={view} onChange={setView} />}
+      {view === 'shared' && stream.data?.lat.every((v) => v == null) && (
+        <section className="card text-sm text-stone-500">
+          Clubs see no map for this run. Turn on{' '}
+          <Link to="/settings" className="text-brand-600">
+            Include the map when sharing
+          </Link>{' '}
+          in Settings → Privacy to show the route with your privacy zones cut
+          out.
+        </section>
+      )}
       {stream.data && (
         <>
           <Suspense
@@ -386,5 +402,60 @@ function Actions({ activity }: { activity: Activity }) {
       </button>
       <FormError message={remove.error?.message} />
     </section>
+  );
+}
+
+function VisibilityPicker({ activity }: { activity: Activity }) {
+  const update = useUpdateActivity(activity.id);
+  return (
+    <label className="mt-1 inline-flex items-center gap-1.5 text-sm text-stone-500">
+      <span aria-hidden>{activity.visibility === 'private' ? '🔒' : '👥'}</span>
+      <span className="sr-only">Who can see this run</span>
+      <select
+        className="rounded-md bg-transparent py-0.5 font-medium text-stone-700 outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 dark:text-stone-300"
+        value={activity.visibility}
+        disabled={update.isPending}
+        onChange={(e) =>
+          update.mutate({ visibility: e.target.value as Visibility })
+        }
+      >
+        {visibilitySchema.options.map((v) => (
+          <option key={v} value={v}>
+            {VISIBILITY_LABELS[v]}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function ViewToggle({
+  view,
+  onChange,
+}: {
+  view: 'owner' | 'shared';
+  onChange: (view: 'owner' | 'shared') => void;
+}) {
+  return (
+    <div
+      className="flex w-fit rounded-lg bg-stone-100 p-0.5 text-sm dark:bg-stone-800"
+      role="group"
+      aria-label="Map view"
+    >
+      {(['owner', 'shared'] as const).map((v) => (
+        <button
+          key={v}
+          className={`rounded-md px-3 py-1 ${
+            view === v
+              ? 'bg-white font-medium shadow-sm dark:bg-stone-700'
+              : 'text-stone-500'
+          }`}
+          aria-pressed={view === v}
+          onClick={() => onChange(v)}
+        >
+          {v === 'owner' ? 'Your view' : 'What clubs see'}
+        </button>
+      ))}
+    </div>
   );
 }

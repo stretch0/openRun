@@ -134,6 +134,7 @@ export function insertParsedActivity(
     name,
     hash,
     originalFile,
+    visibility,
   }: {
     id: string;
     userId: string;
@@ -141,6 +142,7 @@ export function insertParsedActivity(
     name: string;
     hash: string;
     originalFile: string;
+    visibility: 'private' | 'clubs';
   },
 ) {
   db.transaction((tx) => {
@@ -152,6 +154,7 @@ export function insertParsedActivity(
         source: 'file',
         externalId: hash,
         sport: parsed.sport,
+        visibility,
         name,
         startedAt: parsed.startedAt,
         distanceM: parsed.distanceM,
