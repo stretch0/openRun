@@ -34,6 +34,8 @@ export const BATCH = 25;
  * intervals.icu days after the run.
  */
 const RECENT_DAYS = 14;
+/** How often everything since the start date is listed again. */
+const SCAN_EVERY_MS = DAY_MS;
 /** Sync log entries kept per connection. */
 const KEEP_SYNCS = 20;
 
@@ -56,6 +58,7 @@ export async function syncIntegration(
   config: Config,
   integration: Integration,
   now = new Date(),
+  { full = false }: { full?: boolean } = {},
 ): Promise<boolean> {
   if (!config.intervalsUrl || running.has(integration.id)) return false;
   running.add(integration.id);
@@ -68,7 +71,7 @@ export async function syncIntegration(
   let more = false;
   let error: string | null = null;
   let status: Integration['status'] = 'ok';
-  let cursor = integration.cursor;
+  let scannedAt = integration.scannedAt;
   try {
     const apiKey = decryptSecret(config.authSecret, integration.credentials);
     if (!apiKey) {
@@ -77,11 +80,14 @@ export async function syncIntegration(
         401,
       );
     }
-    const recent = new Date(now.getTime() - RECENT_DAYS * DAY_MS);
+    const wholeRange =
+      full ||
+      !scannedAt ||
+      now.getTime() - scannedAt.getTime() >= SCAN_EVERY_MS;
     const from = new Date(
       Math.max(
         integration.syncFrom.getTime(),
-        Math.min((cursor ?? integration.syncFrom).getTime(), recent.getTime()),
+        wholeRange ? 0 : now.getTime() - RECENT_DAYS * DAY_MS,
       ),
     );
     const listed = await listActivities(
@@ -130,10 +136,10 @@ export async function syncIntegration(
       );
       counts[outcome]++;
       done++;
-      cursor = item.startedAt;
     }
     more = waiting.length > done;
-    if (!more) cursor = now;
+    // A backfill in progress looks at the whole range again next time.
+    if (wholeRange) scannedAt = more ? null : now;
   } catch (e) {
     if (!(e instanceof IntervalsError)) {
       console.error(
@@ -154,7 +160,7 @@ export async function syncIntegration(
     .where(eq(schema.integrationSync.id, log.id))
     .run();
   db.update(schema.integration)
-    .set({ cursor, status, lastError: error, lastSyncAt: finishedAt })
+    .set({ scannedAt, status, lastError: error, lastSyncAt: finishedAt })
     .where(eq(schema.integration.id, integration.id))
     .run();
   pruneLog(db, integration.id);

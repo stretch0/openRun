@@ -106,7 +106,7 @@ export const integrationRoutes = new Hono<AuthedEnv>()
     if (existing && existing.accountId === athlete.id) {
       const earlier = values.syncFrom < existing.syncFrom;
       db.update(schema.integration)
-        .set({ ...values, ...(earlier ? { cursor: null } : {}) })
+        .set({ ...values, ...(earlier ? { scannedAt: null } : {}) })
         .where(eq(schema.integration.id, existing.id))
         .run();
     } else {
@@ -132,7 +132,10 @@ export const integrationRoutes = new Hono<AuthedEnv>()
     const syncFrom = startOfDay(c.req.valid('json').syncFrom);
     c.get('db')
       .update(schema.integration)
-      .set({ syncFrom, ...(syncFrom < row.syncFrom ? { cursor: null } : {}) })
+      .set({
+        syncFrom,
+        ...(syncFrom < row.syncFrom ? { scannedAt: null } : {}),
+      })
       .where(eq(schema.integration.id, row.id))
       .run();
     return c.json(overview(c));
@@ -144,7 +147,10 @@ export const integrationRoutes = new Hono<AuthedEnv>()
     if (isSyncing(row.id)) {
       return c.json({ error: 'Already syncing; give it a moment' }, 409);
     }
-    await syncIntegration(c.get('db'), c.get('config'), row);
+    // Asked for by the member, so look at everything, not just recent days.
+    await syncIntegration(c.get('db'), c.get('config'), row, new Date(), {
+      full: true,
+    });
     return c.json(overview(c));
   })
 

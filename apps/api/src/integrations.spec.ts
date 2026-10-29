@@ -225,6 +225,30 @@ describe('intervals.icu sync', () => {
     expect(second.syncs).toHaveLength(2);
   });
 
+  it('picks up older runs that reach intervals.icu late', async () => {
+    const activities: FakeActivity[] = [
+      { id: 'i1', start_date: daysAgo(1), type: 'Run' },
+    ];
+    const t = await connected(activities, 90);
+    await syncAll(t.db, t.config);
+    expect(await t.runs()).toHaveLength(1);
+
+    // Watch history arrives after the first sync, older than the 14 days
+    // looked at every time.
+    activities.push({ id: 'i2', start_date: daysAgo(40), type: 'Run' });
+    await syncAll(t.db, t.config);
+    expect(await t.runs()).toHaveLength(1);
+
+    // Found by the daily look at everything...
+    await syncAll(t.db, t.config, new Date(Date.now() + DAY + 60_000));
+    expect(await t.runs()).toHaveLength(2);
+
+    // ...or straight away with Sync now.
+    activities.push({ id: 'i3', start_date: daysAgo(50), type: 'Run' });
+    await t.sync();
+    expect(await t.runs()).toHaveLength(3);
+  });
+
   it('stops syncing when the key is revoked, until a new key is pasted', async () => {
     const t = await connected([
       { id: 'i1', start_date: daysAgo(1), type: 'Run' },
