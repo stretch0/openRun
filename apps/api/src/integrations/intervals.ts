@@ -68,6 +68,12 @@ export async function getAthlete(baseUrl: string, apiKey: string) {
   return athleteSchema.parse(await res.json());
 }
 
+/**
+ * Only the fields we read; the full list is about 20 times bigger, and we
+ * list everything since the start date on every sync.
+ */
+const ACTIVITY_FIELDS = Object.keys(activitySchema.shape).join(',');
+
 /** Activities that started between two days, inclusive. */
 export async function listActivities(
   baseUrl: string,
@@ -78,7 +84,7 @@ export async function listActivities(
   const res = await call(
     baseUrl,
     apiKey,
-    `/athlete/0/activities?oldest=${oldest}&newest=${newest}`,
+    `/athlete/0/activities?oldest=${oldest}&newest=${newest}&fields=${ACTIVITY_FIELDS}`,
   );
   return z.array(activitySchema).parse(await res.json());
 }

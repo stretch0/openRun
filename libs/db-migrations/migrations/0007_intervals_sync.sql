@@ -6,7 +6,6 @@ CREATE TABLE `integration` (
 	`account_name` text,
 	`credentials` text NOT NULL,
 	`sync_from` integer NOT NULL,
-	`scanned_at` integer,
 	`status` text DEFAULT 'ok' NOT NULL,
 	`last_error` text,
 	`last_sync_at` integer,

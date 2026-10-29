@@ -104,9 +104,8 @@ export const integrationRoutes = new Hono<AuthedEnv>()
       lastError: null,
     };
     if (existing && existing.accountId === athlete.id) {
-      const earlier = values.syncFrom < existing.syncFrom;
       db.update(schema.integration)
-        .set({ ...values, ...(earlier ? { scannedAt: null } : {}) })
+        .set(values)
         .where(eq(schema.integration.id, existing.id))
         .run();
     } else {
@@ -129,13 +128,9 @@ export const integrationRoutes = new Hono<AuthedEnv>()
   .patch('/intervals', zValidator('json', updateIntervalsSchema), (c) => {
     const row = findIntervals(c);
     if (!row) return c.json({ error: 'Not connected' }, 404);
-    const syncFrom = startOfDay(c.req.valid('json').syncFrom);
     c.get('db')
       .update(schema.integration)
-      .set({
-        syncFrom,
-        ...(syncFrom < row.syncFrom ? { scannedAt: null } : {}),
-      })
+      .set({ syncFrom: startOfDay(c.req.valid('json').syncFrom) })
       .where(eq(schema.integration.id, row.id))
       .run();
     return c.json(overview(c));
@@ -147,10 +142,7 @@ export const integrationRoutes = new Hono<AuthedEnv>()
     if (isSyncing(row.id)) {
       return c.json({ error: 'Already syncing; give it a moment' }, 409);
     }
-    // Asked for by the member, so look at everything, not just recent days.
-    await syncIntegration(c.get('db'), c.get('config'), row, new Date(), {
-      full: true,
-    });
+    await syncIntegration(c.get('db'), c.get('config'), row);
     return c.json(overview(c));
   })
 

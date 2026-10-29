@@ -29,13 +29,6 @@ type Integration = typeof schema.integration.$inferSelect;
 const DAY_MS = 86_400_000;
 /** Files fetched per sync; a long backfill carries on over several syncs. */
 export const BATCH = 25;
-/**
- * Recent days are always looked at again, because a watch can reach
- * intervals.icu days after the run.
- */
-const RECENT_DAYS = 14;
-/** How often everything since the start date is listed again. */
-const SCAN_EVERY_MS = DAY_MS;
 /** Sync log entries kept per connection. */
 const KEEP_SYNCS = 20;
 
@@ -52,13 +45,17 @@ const day = (d: Date) => d.toISOString().slice(0, 10);
  * Fetches runs from intervals.icu that haven't been seen before, oldest first,
  * up to BATCH files, and imports them like uploads. Returns false if a sync
  * of this connection was already running.
+ *
+ * Everything since the start date is listed every time: runs can reach
+ * intervals.icu long after they happened (a watch that synced late, or
+ * Garmin sending history in chunks over hours), and the list can't be
+ * filtered by when an activity arrived.
  */
 export async function syncIntegration(
   db: Db,
   config: Config,
   integration: Integration,
   now = new Date(),
-  { full = false }: { full?: boolean } = {},
 ): Promise<boolean> {
   if (!config.intervalsUrl || running.has(integration.id)) return false;
   running.add(integration.id);
@@ -71,7 +68,6 @@ export async function syncIntegration(
   let more = false;
   let error: string | null = null;
   let status: Integration['status'] = 'ok';
-  let scannedAt = integration.scannedAt;
   try {
     const apiKey = decryptSecret(config.authSecret, integration.credentials);
     if (!apiKey) {
@@ -80,20 +76,10 @@ export async function syncIntegration(
         401,
       );
     }
-    const wholeRange =
-      full ||
-      !scannedAt ||
-      now.getTime() - scannedAt.getTime() >= SCAN_EVERY_MS;
-    const from = new Date(
-      Math.max(
-        integration.syncFrom.getTime(),
-        wholeRange ? 0 : now.getTime() - RECENT_DAYS * DAY_MS,
-      ),
-    );
     const listed = await listActivities(
       config.intervalsUrl,
       apiKey,
-      day(new Date(from.getTime() - DAY_MS)),
+      day(new Date(integration.syncFrom.getTime() - DAY_MS)),
       day(new Date(now.getTime() + DAY_MS)),
     );
 
@@ -138,8 +124,6 @@ export async function syncIntegration(
       done++;
     }
     more = waiting.length > done;
-    // A backfill in progress looks at the whole range again next time.
-    if (wholeRange) scannedAt = more ? null : now;
   } catch (e) {
     if (!(e instanceof IntervalsError)) {
       console.error(
@@ -160,7 +144,7 @@ export async function syncIntegration(
     .where(eq(schema.integrationSync.id, log.id))
     .run();
   db.update(schema.integration)
-    .set({ scannedAt, status, lastError: error, lastSyncAt: finishedAt })
+    .set({ status, lastError: error, lastSyncAt: finishedAt })
     .where(eq(schema.integration.id, integration.id))
     .run();
   pruneLog(db, integration.id);

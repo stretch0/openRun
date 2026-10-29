@@ -35,12 +35,6 @@ export const integration = sqliteTable(
     credentials: text('credentials').notNull(),
     /** Runs that started before this aren't imported. */
     syncFrom: timestamp('sync_from').notNull(),
-    /**
-     * When everything since sync_from was last listed. Recent days are listed
-     * every sync; the whole range once a day, to catch history that reaches
-     * the provider late (e.g. a watch's older runs after first connecting).
-     */
-    scannedAt: timestamp('scanned_at'),
     status: text('status', { enum: integrationStatuses })
       .notNull()
       .default('ok'),

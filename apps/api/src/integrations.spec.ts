@@ -233,18 +233,12 @@ describe('intervals.icu sync', () => {
     await syncAll(t.db, t.config);
     expect(await t.runs()).toHaveLength(1);
 
-    // Watch history arrives after the first sync, older than the 14 days
-    // looked at every time.
+    // Garmin sends watch history in chunks after the first sync.
     activities.push({ id: 'i2', start_date: daysAgo(40), type: 'Run' });
     await syncAll(t.db, t.config);
-    expect(await t.runs()).toHaveLength(1);
-
-    // Found by the daily look at everything...
-    await syncAll(t.db, t.config, new Date(Date.now() + DAY + 60_000));
     expect(await t.runs()).toHaveLength(2);
 
-    // ...or straight away with Sync now.
-    activities.push({ id: 'i3', start_date: daysAgo(50), type: 'Run' });
+    activities.push({ id: 'i3', start_date: daysAgo(80), type: 'Run' });
     await t.sync();
     expect(await t.runs()).toHaveLength(3);
   });
