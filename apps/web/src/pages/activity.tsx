@@ -70,6 +70,7 @@ export function ActivityPage() {
               <p className="text-sm text-stone-500">
                 {formatDateTime(a.startedAt, me.timezone)} ·{' '}
                 {SPORT_LABELS[a.sport]}
+                {a.device && <> · {a.device}</>}
               </p>
               <VisibilityPicker activity={a} />
             </div>

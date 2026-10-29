@@ -35,6 +35,8 @@ const envSchema = z.object({
     .default('https://nominatim.openstreetmap.org/search'),
   /** Open-Meteo-compatible forecast API for club runs. Empty turns it off. */
   WEATHER_URL: z.string().default('https://api.open-meteo.com/v1/forecast'),
+  /** intervals.icu, for syncing runs from watches. Empty turns it off. */
+  INTERVALS_URL: z.string().default('https://intervals.icu'),
   /** Web Push keys. Generated and kept in DATA_DIR if not set. */
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
@@ -80,6 +82,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     trustProxy: e.TRUST_PROXY,
     placeSearchUrl: e.PLACE_SEARCH_URL.trim() || null,
     weatherUrl: e.WEATHER_URL.trim() || null,
+    intervalsUrl: e.INTERVALS_URL.trim().replace(/\/+$/, '') || null,
     vapidKeys:
       e.VAPID_PUBLIC_KEY && e.VAPID_PRIVATE_KEY
         ? { publicKey: e.VAPID_PUBLIC_KEY, privateKey: e.VAPID_PRIVATE_KEY }

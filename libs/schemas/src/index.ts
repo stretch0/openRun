@@ -8,3 +8,4 @@ export * from './club.js';
 export * from './place.js';
 export * from './coffee.js';
 export * from './notifications.js';
+export * from './integrations.js';

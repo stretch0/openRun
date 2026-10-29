@@ -12,6 +12,7 @@ type RunOptions = {
   sport?: number;
   subSport?: number;
   withSession?: boolean;
+  start?: Date;
 };
 
 /** A FIT run sampled every second, heading north from London. */
@@ -21,10 +22,11 @@ export function fitRun({
   sport = 1,
   subSport = 0,
   withSession = true,
+  start = START,
 }: RunOptions = {}): Uint8Array {
   const enc = new FitEncoder();
   const ts = (offsetS: number) =>
-    FitEncoder.toFitTimestamp(new Date(START.getTime() + offsetS * 1000));
+    FitEncoder.toFitTimestamp(new Date(start.getTime() + offsetS * 1000));
   const u32 = (number: number, value: number) => ({
     number,
     size: 4,

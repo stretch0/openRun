@@ -8,12 +8,14 @@ import {
 import { ensureUpcomingRuns } from './clubs/runs.js';
 import { refreshWeather } from './clubs/weather.js';
 import type { Config } from './config.js';
+import { syncAll } from './integrations/sync.js';
 import type { Notifier } from './push.js';
 
 /**
  * Background jobs, run inside the server: reminders and coffee nudges every
  * minute, weather every half hour (each run's forecast refreshes every few
- * hours), and runs created eight weeks ahead every night.
+ * hours), intervals.icu sync every half hour, and runs created eight weeks
+ * ahead every night.
  */
 export function startScheduler({
   db,
@@ -37,6 +39,7 @@ export function startScheduler({
   const weather = safely('weather', () =>
     config.weatherUrl ? refreshWeather(db, config.weatherUrl) : undefined,
   );
+  const sync = safely('intervals.icu sync', () => syncAll(db, config));
   const jobs = [
     new Cron(
       '* * * * *',
@@ -48,10 +51,12 @@ export function startScheduler({
     ),
     new Cron('*/30 * * * *', { protect: true }, weather),
     new Cron('15 3 * * *', { protect: true }, runsAhead),
+    // Off the half hour, away from the weather job.
+    new Cron('10,40 * * * *', { protect: true }, sync),
   ];
   // Catch up after a restart, without delaying start-up.
   const startup = setTimeout(() => {
-    void runsAhead().then(weather);
+    void runsAhead().then(weather).then(sync);
   }, 5_000);
   return {
     stop() {

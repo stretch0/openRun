@@ -24,8 +24,8 @@ export function PrivacyPage() {
         </p>
         <p>
           You can change a run to <strong>My clubs</strong>, or set that as the
-          default in Settings → Privacy. Clubs are coming in a later update;
-          until then a shared run isn't shown to anyone else.
+          default in Settings → Privacy. Even then, a club only gets a run when
+          you share it with that club.
         </p>
       </Section>
 
@@ -54,6 +54,12 @@ export function PrivacyPage() {
           person who runs it can read what's stored there. Only use an instance
           run by someone you trust, or run your own: openRun is free and
           self-hosted.
+        </p>
+        <p>
+          If you sync from your watch through intervals.icu, the server keeps
+          your intervals.icu API key, encrypted. Whoever runs the server could
+          still use it to reach your intervals.icu account, but never your
+          Garmin or other watch account. Disconnecting removes it.
         </p>
         {instance?.contact && (
           <p>

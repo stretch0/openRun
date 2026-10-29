@@ -83,6 +83,7 @@ function toSummary(a: ActivityRow): ActivitySummary {
     durationS: a.durationS,
     elevationGainM: a.elevationGainM,
     avgHeartRate: a.avgHeartRate,
+    device: a.device,
   };
 }
 
@@ -268,6 +269,7 @@ export const activityRoutes = new Hono<AuthedEnv>()
         startedAt: row.startedAt,
         distanceM: row.distanceM,
         durationS: row.durationS,
+        device: row.device,
       },
       () => sharedTrack(c, row),
     );

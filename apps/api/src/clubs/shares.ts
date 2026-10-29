@@ -14,6 +14,8 @@ export type ShareSnapshot = {
   startedAt: Date;
   distanceM: number;
   durationS: number;
+  /** The watch that recorded it, for Garmin attribution. */
+  device: string | null;
 };
 
 /** A share counts towards a club run that started within this of it. */
@@ -153,6 +155,7 @@ export function listShares(db: Db, filter: ShareFilter): ClubShare[] {
       startedAt: schema.clubShare.startedAt,
       distanceM: schema.clubShare.distanceM,
       durationS: schema.clubShare.durationS,
+      device: schema.clubShare.device,
       track: schema.clubShare.track,
     })
     .from(schema.clubShare)

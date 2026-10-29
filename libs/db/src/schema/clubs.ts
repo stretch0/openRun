@@ -270,6 +270,8 @@ export const clubShare = sqliteTable(
     startedAt: timestamp('started_at').notNull(),
     distanceM: real('distance_m').notNull(),
     durationS: real('duration_s').notNull(),
+    /** The watch that recorded it, shown for Garmin attribution. */
+    device: text('device'),
     /** [lat, lng] pairs with privacy zones cut out (null), or no map at all. */
     track: text('track', { mode: 'json' }).$type<([number, number] | null)[]>(),
     ...timestamps,
