@@ -3,6 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type Db, createDb, runMigrations } from '@openrun/db';
+import { fitRun } from '@openrun/activity-files/testing';
+import type { ImportResult } from '@openrun/schemas';
 import { createApp } from './app.js';
 import { createAuth } from './auth.js';
 import { type Config, loadConfig } from './config.js';
@@ -90,4 +92,20 @@ export function send(
     headers: { 'content-type': 'application/json', cookie, origin },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+}
+
+/** Imports a synthetic FIT run (51.5, -0.1 heading north) and returns its id. */
+export async function importFit(
+  app: App,
+  cookie: string,
+  options?: Parameters<typeof fitRun>[0],
+) {
+  const form = new FormData();
+  form.append('files', new File([fitRun(options)], 'run.fit'));
+  const res = await app.request('/api/activities/import', {
+    method: 'POST',
+    headers: { cookie, origin },
+    body: form,
+  });
+  return ((await res.json()) as ImportResult[])[0].activityId as string;
 }

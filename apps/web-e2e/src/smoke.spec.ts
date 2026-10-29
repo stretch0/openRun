@@ -254,7 +254,7 @@ test.describe('privacy', () => {
 test.describe('clubs', () => {
   test.use({ storageState: authFile });
 
-  test('runs a club from invite to RSVP and coffee', async ({
+  test('runs a club from invite to RSVP, coffee and sharing', async ({
     page,
     browser,
   }) => {
@@ -382,6 +382,37 @@ test.describe('clubs', () => {
         .getByRole('region', { name: 'Your usual' })
         .getByText('Flat white · Oat'),
     ).toBeVisible();
+
+    // Share a run with the club: needs more than attendance only.
+    const clubUrl = runUrl.replace(/\/runs\/.*/, '');
+    await page
+      .getByLabel('What you share with Parkside Runners')
+      .selectOption('summaries');
+    await expect(page.getByText(/Plus distance, time and pace/)).toBeVisible();
+    await page.goto('/');
+    await page
+      .getByRole('link', { name: /Parkrun/ })
+      .first()
+      .click();
+    const share = page.getByRole('region', { name: 'Share with clubs' });
+    await share.getByRole('button', { name: 'Share' }).click();
+    await expect(
+      share.getByRole('button', { name: 'Take back' }),
+    ).toBeVisible();
+    await page.goto(clubUrl);
+    await expect(
+      page
+        .getByRole('region', { name: 'Recently shared' })
+        .getByText('Parkrun'),
+    ).toBeVisible();
+
+    // Highlights only name people who opt in.
+    const highlights = page.getByRole('region', { name: 'Highlights' });
+    await highlights.getByLabel(/Celebrate me in highlights/).check();
+    await page.reload();
+    await expect(
+      highlights.getByLabel(/Celebrate me in highlights/),
+    ).toBeChecked();
   });
 });
 

@@ -68,6 +68,10 @@ export const clubMember = sqliteTable(
       .default('attendance'),
     /** No notifications from this club. */
     muted: integer('muted', { mode: 'boolean' }).notNull().default(false),
+    /** Appear by name in the club's highlights. Off until they opt in. */
+    highlights: integer('highlights', { mode: 'boolean' })
+      .notNull()
+      .default(false),
     ...timestamps,
   },
   (t) => [
@@ -239,4 +243,39 @@ export const coffeeUsual = sqliteTable(
     ...timestamps,
   },
   (t) => [uniqueIndex('coffee_usual_club_user_idx').on(t.clubId, t.userId)],
+);
+
+/**
+ * A run a member chose to share with a club: a copy, so editing or deleting
+ * the original doesn't change it. `sourceId` is the member's activity id,
+ * kept so they can withdraw the share; there's deliberately no foreign key
+ * into their run log.
+ */
+export const clubShare = sqliteTable(
+  'club_share',
+  {
+    id: id(),
+    clubId: text('club_id')
+      .notNull()
+      .references(() => club.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    sourceId: text('source_id').notNull(),
+    /** The club run it was part of, if it started near one. */
+    clubRunId: text('club_run_id').references(() => clubRun.id, {
+      onDelete: 'set null',
+    }),
+    name: text('name').notNull(),
+    startedAt: timestamp('started_at').notNull(),
+    distanceM: real('distance_m').notNull(),
+    durationS: real('duration_s').notNull(),
+    /** [lat, lng] pairs with privacy zones cut out (null), or no map at all. */
+    track: text('track', { mode: 'json' }).$type<([number, number] | null)[]>(),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex('club_share_club_source_idx').on(t.clubId, t.sourceId),
+    index('club_share_run_idx').on(t.clubRunId),
+  ],
 );

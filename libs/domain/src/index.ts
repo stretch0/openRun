@@ -10,3 +10,4 @@ export * from './schedule.js';
 export * from './coffee.js';
 export * from './reminders.js';
 export * from './weather.js';
+export * from './highlights.js';

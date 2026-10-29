@@ -43,6 +43,13 @@
       "when": 1793238851975,
       "tag": "0005_reminders_and_weather",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793240248455,
+      "tag": "0006_club_shares",
+      "breakpoints": true
     }
   ]
 }

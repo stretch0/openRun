@@ -1,39 +1,12 @@
-import { fitRun } from '@openrun/activity-files/testing';
 import {
   type ActivityList,
-  type ImportResult,
   activitySchema,
   activityStreamSchema,
   privacySettingsSchema,
   privacyZoneSchema,
 } from '@openrun/schemas';
 import { resetPassword } from './reset-password.js';
-import { type App, get, origin, setup, signUp } from './test-utils.js';
-
-function send(
-  app: App,
-  cookie: string,
-  method: string,
-  path: string,
-  body?: unknown,
-) {
-  return app.request(path, {
-    method,
-    headers: { 'content-type': 'application/json', cookie, origin },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-}
-
-async function importFit(app: App, cookie: string) {
-  const form = new FormData();
-  form.append('files', new File([fitRun()], 'run.fit'));
-  const res = await app.request('/api/activities/import', {
-    method: 'POST',
-    headers: { cookie, origin },
-    body: form,
-  });
-  return ((await res.json()) as ImportResult[])[0].activityId as string;
-}
+import { get, importFit, origin, send, setup, signUp } from './test-utils.js';
 
 describe('privacy', () => {
   it('keeps runs private by default and follows the default setting', async () => {

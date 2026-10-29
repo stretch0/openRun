@@ -4,6 +4,7 @@ import type { Attendee, ClubRunDetail, RunCoffee } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
 import { RsvpButtons } from '../components/club-run-card';
 import { CoffeePicker, describeOrder } from '../components/coffee';
+import { SharedRuns } from '../components/shared-runs';
 import { WeatherDetail } from '../components/weather';
 import {
   clubApi,
@@ -82,6 +83,7 @@ export function ClubRunPage() {
       {!cancelled && <Rsvp run={r} />}
       {r.coffee && <Coffee run={r} coffee={r.coffee} />}
       <Attendees run={r} />
+      <SharedRuns shares={r.shares} />
       {r.canManage && <OrganiserActions run={r} />}
     </>
   );

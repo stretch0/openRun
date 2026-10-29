@@ -28,7 +28,7 @@ See [docs/PRIVACY.md](docs/PRIVACY.md), phase 1.
 - Password reset by server command only; no admin reset or impersonation in the app
 - A "who can see what" page, and the sign-up page names who stores your data
 
-### M2 – Run clubs (in progress)
+### M2 – Run clubs ✅
 
 - ✅ Clubs with owner, organiser and member roles; join by link or code, optional approval
 - ✅ Meeting points, repeating runs (RRULE), one-off runs, cancellations
@@ -37,8 +37,8 @@ See [docs/PRIVACY.md](docs/PRIVACY.md), phase 1.
 - ✅ Order cutoff that locks orders and builds a summary any member can show the cashier on their phone (big text, works offline, keeps the screen on)
 - ✅ Weather forecast (Open-Meteo), Web Push reminders (evening before a morning run, otherwise 2 hours before), coffee nudges, cancellation and schedule-change notices, per-club mute
 - ✅ Built as its own module that never reads members' run logs; members choose a sharing level per club (attendance only, summaries, or full)
-- Check-ins (manual, or from a run the member shares)
-- Fun attendance highlights, never speed rankings: streaks, milestones and the club's combined distance, opt-in per member
+- ✅ Sharing a run with a club as a copy (numbers, or a privacy-zoned route), withdrawable; making a run private takes it back
+- ✅ Fun attendance highlights, never speed rankings: weekly streaks, milestones, "ran in the rain", and the club's turnout and shared distance; named only if a member opts in. Saying you're going counts as turning up, so there are no check-ins
 
 ### M3 – Sync
 

@@ -79,20 +79,22 @@ The club module never queries `activity`, `activity_stream` or `personal_best`. 
 - **Members** by identity: user id and display name, and later `user@instance`.
 - **Club records:** clubs, locations, run series, runs, RSVPs, menu and coffee orders, from the draft model in `HANDOVER.md`.
 - **Shares:** a `club_share` row is a **snapshot** a member chose to send to a club. It holds the date, distance, time, pace and optionally a privacy-zoned, downsampled track. It is copied, not joined, so changing or deleting the original run doesn't silently change what the club sees, and the member can withdraw a share.
-- **Check-ins:** a check-in is either manual or points to a `club_share`.
+- **Attendance:** saying you're going to a run that went ahead counts as being there. There are no check-ins and no location checks.
 - **Highlights, not rankings:** clubs celebrate turning up, never speed. Attendance streaks, milestones ("10th Saturday run", "ran in the rain") and the club's combined distance. There are no pace or distance rankings between members, and a member appears in highlights only if they opt in.
 
 Each club member has a **sharing level**:
 
 | Level                     | What the club gets                                     |
 | ------------------------- | ------------------------------------------------------ |
-| Attendance only (default) | RSVPs, coffee orders, check-ins                        |
+| Attendance only (default) | RSVPs and coffee orders                                |
 | Summaries                 | Plus distance, time and pace of runs the member shares |
 | Full                      | Plus privacy-zoned maps of runs the member shares      |
 
 **Weather and notifications.** Forecasts are fetched by the server for each meeting point, so Open-Meteo (or whatever `WEATHER_URL` points at) sees the meeting point's position and nothing about who's going. Notifications use Web Push: the server encrypts each message for the member's device and hands it to that browser's push service (Google, Apple or Mozilla), which can see when a message is sent but not what it says. Members choose what they're told about, can mute any club, and nothing is sent to a device they haven't turned notifications on for.
 
 **Finding meeting points.** Organisers can search for a place by name. The search goes from the server to a geocoder (OpenStreetMap's Nominatim by default, set with `PLACE_SEARCH_URL`), so the geocoder sees the search text and the server's address but nothing about the member. Operators can point it at their own Nominatim or turn it off; tapping the map and "Use where I'm standing" never leave the device.
+
+**Shared runs.** A route is only included when the member's level for that club is "Summaries and maps" and map sharing is on in their privacy settings; it is always trimmed to their privacy zones and downsampled. Sharing a run sets its visibility to "Clubs"; making it private again withdraws it from every club. Highlights name only members who opted in for that club; the month's turnout and shared distance are totals that name nobody.
 
 Inside one instance, the personal module "sends" a share by calling the club module's API. Phase 3 replaces that call with a message to another instance.
 
@@ -103,7 +105,6 @@ Inside one instance, the personal module "sends" a share by calling the club mod
   - `join` and `leave`
   - `rsvp`
   - `coffee-order`
-  - `check-in`
   - `share` and `unshare`
   - from the club to members: `run-scheduled`, `run-changed` and `order-summary`
 - **Offline instances:** messages are queued and retried, and the club keeps its own copy of what it was sent.
