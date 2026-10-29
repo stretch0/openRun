@@ -98,7 +98,7 @@ export function ClubPage() {
   );
 }
 
-/** The next few runs; the rest of the eight weeks on request. */
+/** Runs in the coming week (at least the next one); later ones on request. */
 function UpcomingRuns({
   runs,
   timeZone,
@@ -107,7 +107,12 @@ function UpcomingRuns({
   timeZone: string;
 }) {
   const [all, setAll] = useState(false);
-  const shown = all ? runs : runs.slice(0, 4);
+  const weekAhead = Date.now() + 7 * 86_400_000;
+  const soon = Math.max(
+    1,
+    runs.filter((r) => Date.parse(r.startsAt) < weekAhead).length,
+  );
+  const shown = all ? runs : runs.slice(0, soon);
   return (
     <>
       {shown.map((run) => (
@@ -115,7 +120,7 @@ function UpcomingRuns({
       ))}
       {runs.length > shown.length && (
         <button className="btn-secondary w-full" onClick={() => setAll(true)}>
-          Show all {runs.length} upcoming runs
+          Show later runs ({runs.length - shown.length})
         </button>
       )}
     </>
