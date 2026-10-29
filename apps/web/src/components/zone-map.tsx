@@ -95,7 +95,13 @@ export default function ZoneMap({
   }, [zones, draft, loaded]);
 
   useEffect(() => {
-    if (centre) map.current?.flyTo({ center: [centre.lng, centre.lat], zoom });
+    // Long flights (from the whole world, say) jump straight there instead.
+    if (centre)
+      map.current?.flyTo({
+        center: [centre.lng, centre.lat],
+        zoom,
+        maxDuration: 1500,
+      });
   }, [centre, zoom]);
 
   return (

@@ -547,7 +547,7 @@ function FindPlace({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search, e.g. Victoria Park bandstand"
+            placeholder="Park, street or postcode"
             enterKeyHint="search"
           />
           <button
@@ -565,7 +565,8 @@ function FindPlace({
         >
           {results.data.length === 0 && (
             <li className="px-3 py-2 text-stone-500">
-              Nothing found. Try a street, park or postcode.
+              Nothing found. Search for the park, street or postcode, then tap
+              the map for the exact spot.
             </li>
           )}
           {results.data.map((place) => (
