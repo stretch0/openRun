@@ -90,6 +90,8 @@ Each club member has a **sharing level**:
 | Summaries                 | Plus distance, time and pace of runs the member shares |
 | Full                      | Plus privacy-zoned maps of runs the member shares      |
 
+**Finding meeting points.** Organisers can search for a place by name. The search goes from the server to a geocoder (OpenStreetMap's Nominatim by default, set with `PLACE_SEARCH_URL`), so the geocoder sees the search text and the server's address but nothing about the member. Operators can point it at their own Nominatim or turn it off; tapping the map and "Use where I'm standing" never leave the device.
+
 Inside one instance, the personal module "sends" a share by calling the club module's API. Phase 3 replaces that call with a message to another instance.
 
 ### Phase 3: federation

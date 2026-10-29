@@ -9,7 +9,7 @@ export function UpdatePrompt() {
 
   if (!needRefresh) return null;
   return (
-    <div className="fixed inset-x-4 bottom-24 z-20 mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-stone-900 p-3 text-sm text-white shadow-lg">
+    <div className="fixed inset-x-4 bottom-24 z-40 mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-stone-900 p-3 text-sm text-white shadow-lg">
       <span className="flex-1">A new version of openRun is available.</span>
       <button
         className="font-semibold text-brand-500"

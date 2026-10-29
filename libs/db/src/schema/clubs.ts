@@ -1,0 +1,153 @@
+import {
+  index,
+  integer,
+  real,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from 'drizzle-orm/sqlite-core';
+import { user } from './auth.js';
+import { id, timestamp, timestamps } from './columns.js';
+
+// Run clubs. Nothing here references a member's run log (activity and
+// friends): clubs only know what members do in the club or choose to share.
+// See docs/PRIVACY.md, phase 2.
+
+export const clubRoles = ['owner', 'organiser', 'member'] as const;
+export const memberStatuses = ['active', 'pending'] as const;
+/** What a member shares with this club. Only attendance until they choose more. */
+export const shareLevels = ['attendance', 'summaries', 'full'] as const;
+export const rsvpStatuses = ['going', 'maybe', 'not_going'] as const;
+export const clubRunStatuses = ['scheduled', 'cancelled'] as const;
+
+export const club = sqliteTable('club', {
+  id: id(),
+  name: text('name').notNull(),
+  description: text('description'),
+  /** Runs are scheduled in this time zone, so 8am stays 8am across clock changes. */
+  timezone: text('timezone').notNull(),
+  /** Shared in invite links; organisers can change it to stop old links working. */
+  joinCode: text('join_code').notNull().unique(),
+  /** New members wait for an organiser to approve them. */
+  requireApproval: integer('require_approval', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  createdBy: text('created_by').references(() => user.id, {
+    onDelete: 'set null',
+  }),
+  ...timestamps,
+});
+
+export const clubMember = sqliteTable(
+  'club_member',
+  {
+    id: id(),
+    clubId: text('club_id')
+      .notNull()
+      .references(() => club.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    role: text('role', { enum: clubRoles }).notNull().default('member'),
+    status: text('status', { enum: memberStatuses })
+      .notNull()
+      .default('active'),
+    shareLevel: text('share_level', { enum: shareLevels })
+      .notNull()
+      .default('attendance'),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex('club_member_club_user_idx').on(t.clubId, t.userId),
+    index('club_member_user_idx').on(t.userId),
+  ],
+);
+
+export const clubLocation = sqliteTable(
+  'club_location',
+  {
+    id: id(),
+    clubId: text('club_id')
+      .notNull()
+      .references(() => club.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    lat: real('lat').notNull(),
+    lng: real('lng').notNull(),
+    /** Where exactly to meet, e.g. "by the bandstand". */
+    notes: text('notes'),
+    ...timestamps,
+  },
+  (t) => [index('club_location_club_idx').on(t.clubId)],
+);
+
+/** A repeating run. Its dated runs are created ahead of time in club_run. */
+export const clubRunSeries = sqliteTable(
+  'club_run_series',
+  {
+    id: id(),
+    clubId: text('club_id')
+      .notNull()
+      .references(() => club.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    /** Weekly RRULE subset, e.g. FREQ=WEEKLY;BYDAY=SA. See libs/domain/schedule. */
+    rrule: text('rrule').notNull(),
+    /** First day the series runs (YYYY-MM-DD); interval weeks count from here. */
+    startsOn: text('starts_on').notNull(),
+    /** Local start time, HH:MM in the club's time zone. */
+    startTime: text('start_time').notNull(),
+    locationId: text('location_id').references(() => clubLocation.id, {
+      onDelete: 'set null',
+    }),
+    notes: text('notes'),
+    /** Stopped series keep their past runs but create no new ones. */
+    endedAt: timestamp('ended_at'),
+    ...timestamps,
+  },
+  (t) => [index('club_run_series_club_idx').on(t.clubId)],
+);
+
+/** A dated club run, from a series or one-off, so each can be edited or cancelled. */
+export const clubRun = sqliteTable(
+  'club_run',
+  {
+    id: id(),
+    clubId: text('club_id')
+      .notNull()
+      .references(() => club.id, { onDelete: 'cascade' }),
+    seriesId: text('series_id').references(() => clubRunSeries.id, {
+      onDelete: 'set null',
+    }),
+    title: text('title').notNull(),
+    startsAt: timestamp('starts_at').notNull(),
+    locationId: text('location_id').references(() => clubLocation.id, {
+      onDelete: 'set null',
+    }),
+    notes: text('notes'),
+    status: text('status', { enum: clubRunStatuses })
+      .notNull()
+      .default('scheduled'),
+    cancelledReason: text('cancelled_reason'),
+    ...timestamps,
+  },
+  (t) => [
+    index('club_run_club_starts_idx').on(t.clubId, t.startsAt),
+    // Makes creating a series' runs ahead of time safe to repeat.
+    uniqueIndex('club_run_series_starts_idx').on(t.seriesId, t.startsAt),
+  ],
+);
+
+export const rsvp = sqliteTable(
+  'rsvp',
+  {
+    id: id(),
+    clubRunId: text('club_run_id')
+      .notNull()
+      .references(() => clubRun.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    status: text('status', { enum: rsvpStatuses }).notNull(),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex('rsvp_run_user_idx').on(t.clubRunId, t.userId)],
+);

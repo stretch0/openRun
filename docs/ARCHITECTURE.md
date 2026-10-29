@@ -60,6 +60,14 @@ The rules are in [PRIVACY.md](PRIVACY.md). How they're implemented:
 - `sharedStream()` in `apps/api/src/privacy.ts` is the one place that turns a stream into what others may see: no positions unless the owner shares maps, and none inside a zone. `GET /api/activities/:id/stream?view=shared` lets the owner preview it; M2 will use the same function.
 - Passwords are reset only with `reset-password.js` (`apps/api/src/reset-password.ts`, built next to `main.js`). It sets a temporary password and deletes the user's sessions.
 
+## Clubs
+
+- The club code lives in `apps/api/src/clubs/` and never touches run-log tables; a test (`clubs.spec.ts`) fails if it does. Members' names are shared with fellow members; emails never are.
+- Repeating runs are stored as a weekly RRULE subset plus a local start time and the club's time zone. `libs/domain/src/schedule.ts` turns them into instants, handling clock changes (a skipped time moves later; a repeated time uses the first).
+- Runs exist eight weeks ahead in `club_run`, created on demand when a club or its runs are viewed (`ensureUpcomingRuns`, safe to repeat thanks to a unique index on series and start time). Editing a series updates future runs, removes ones no longer on the schedule and keeps RSVPs on the rest. A scheduler arrives with reminders in M2 part 3.
+- Someone who leaves a club, or is removed, takes their RSVPs with them.
+- Meeting point search (`GET /api/places`) proxies a Nominatim-compatible geocoder (`PLACE_SEARCH_URL`, empty to turn it off). Requests are queued to one a second and results cached in memory, as Nominatim's public usage policy asks; the app searches on submit, never as you type.
+
 ## Auth
 
 - [Better Auth](https://better-auth.com) handles email + password and passkeys (`@better-auth/passkey`). Sessions use cookies.

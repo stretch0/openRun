@@ -46,6 +46,8 @@ export default defineConfig({
           BETTER_AUTH_SECRET: randomBytes(32).toString('base64'),
           DATA_DIR: dataDir,
           WEB_DIR: 'apps/web/dist',
+          // Tests stub place search in the browser; never reach a real geocoder.
+          PLACE_SEARCH_URL: 'http://127.0.0.1:9/search',
         },
       },
   projects: [

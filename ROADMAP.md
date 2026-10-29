@@ -28,14 +28,15 @@ See [docs/PRIVACY.md](docs/PRIVACY.md), phase 1.
 - Password reset by server command only; no admin reset or impersonation in the app
 - A "who can see what" page, and the sign-up page names who stores your data
 
-### M2 – Run clubs
+### M2 – Run clubs (in progress)
 
-- Clubs with owner, organiser and member roles; join by link or code
-- Locations, café menu, repeating runs (RRULE) with pace groups
-- RSVP (going / maybe / not going), coffee order with a saved "usual"
-- Order cutoff that locks orders and builds a summary for the café
+- ✅ Clubs with owner, organiser and member roles; join by link or code, optional approval
+- ✅ Meeting points, repeating runs (RRULE), one-off runs, cancellations
+- ✅ RSVP (going / maybe / not going)
+- Café menu, coffee order with a saved "usual"
+- Order cutoff that locks orders and builds a summary any member can show the cashier on their phone (big text, works offline)
 - Weather forecast (Open-Meteo), Web Push reminders, cancellations
-- Built as its own module that never reads members' run logs; members choose a sharing level per club (attendance only, summaries, or full)
+- ✅ Built as its own module that never reads members' run logs; members choose a sharing level per club (attendance only, summaries, or full)
 - Check-ins (manual, or from a run the member shares)
 - Fun attendance highlights, never speed rankings: streaks, milestones and the club's combined distance, opt-in per member
 

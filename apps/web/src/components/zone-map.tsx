@@ -18,12 +18,18 @@ export default function ZoneMap({
   zones,
   draft,
   onPick,
+  label = 'Map: tap to place the centre of the zone',
+  zoom = 13,
 }: {
+  /** Accessible name; describes what tapping places. */
+  label?: string;
   /** Where to start: the user's latest run, an existing zone, or their location. */
   centre: { lat: number; lng: number } | null;
   zones: Circle[];
   draft: Circle | null;
   onPick: (point: { lat: number; lng: number }) => void;
+  /** How close to zoom in on `centre`. */
+  zoom?: number;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
@@ -37,7 +43,7 @@ export default function ZoneMap({
       container: container.current,
       style: OSM_STYLE,
       center: centre ? [centre.lng, centre.lat] : [0, 30],
-      zoom: centre ? 13 : 1,
+      zoom: centre ? zoom : 1,
       attributionControl: { compact: true },
     });
     m.addControl(new NavigationControl({ showCompass: false }));
@@ -89,16 +95,21 @@ export default function ZoneMap({
   }, [zones, draft, loaded]);
 
   useEffect(() => {
+    // Long flights (from the whole world, say) jump straight there instead.
     if (centre)
-      map.current?.flyTo({ center: [centre.lng, centre.lat], zoom: 13 });
-  }, [centre]);
+      map.current?.flyTo({
+        center: [centre.lng, centre.lat],
+        zoom,
+        maxDuration: 1500,
+      });
+  }, [centre, zoom]);
 
   return (
     <div
       ref={container}
       className="h-64 overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800"
       role="application"
-      aria-label="Map: tap to place the centre of the zone"
+      aria-label={label}
     />
   );
 }

@@ -32,6 +32,7 @@ describe('App', () => {
               inviteOnly: false,
               passwordLogin: true,
               contact: null,
+              placeSearch: true,
               needsSetup: true,
             })
           : respond({ error: 'Unauthorized' }, 401),
