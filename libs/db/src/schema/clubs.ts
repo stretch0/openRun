@@ -20,8 +20,6 @@ export const shareLevels = ['attendance', 'summaries', 'full'] as const;
 export const rsvpStatuses = ['going', 'maybe', 'not_going'] as const;
 export const clubRunStatuses = ['scheduled', 'cancelled'] as const;
 
-export type PaceGroup = { name: string; description?: string };
-
 export const club = sqliteTable('club', {
   id: id(),
   name: text('name').notNull(),
@@ -100,10 +98,6 @@ export const clubRunSeries = sqliteTable(
     locationId: text('location_id').references(() => clubLocation.id, {
       onDelete: 'set null',
     }),
-    paceGroups: text('pace_groups', { mode: 'json' })
-      .$type<PaceGroup[]>()
-      .notNull()
-      .default([]),
     notes: text('notes'),
     /** Stopped series keep their past runs but create no new ones. */
     endedAt: timestamp('ended_at'),
@@ -128,10 +122,6 @@ export const clubRun = sqliteTable(
     locationId: text('location_id').references(() => clubLocation.id, {
       onDelete: 'set null',
     }),
-    paceGroups: text('pace_groups', { mode: 'json' })
-      .$type<PaceGroup[]>()
-      .notNull()
-      .default([]),
     notes: text('notes'),
     status: text('status', { enum: clubRunStatuses })
       .notNull()
@@ -157,10 +147,6 @@ export const rsvp = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     status: text('status', { enum: rsvpStatuses }).notNull(),
-    paceGroup: text('pace_group'),
-    /** People coming along who aren't members. */
-    guests: integer('guests').notNull().default(0),
-    note: text('note'),
     ...timestamps,
   },
   (t) => [uniqueIndex('rsvp_run_user_idx').on(t.clubRunId, t.userId)],

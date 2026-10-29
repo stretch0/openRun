@@ -31,13 +31,6 @@ const timeSchema = z
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use HH:MM, e.g. 08:00');
 const daySchema = z.iso.date();
 
-export const paceGroupSchema = z.object({
-  name: z.string().trim().min(1).max(40),
-  description: z.string().trim().max(200).optional(),
-});
-export type PaceGroup = z.infer<typeof paceGroupSchema>;
-const paceGroupsSchema = z.array(paceGroupSchema).max(10).default([]);
-
 export const locationSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -65,7 +58,6 @@ export const seriesSchema = z.object({
   startsOn: z.string(),
   startTime: z.string(),
   locationId: z.string().nullable(),
-  paceGroups: z.array(paceGroupSchema),
   notes: z.string().nullable(),
   ended: z.boolean(),
 });
@@ -78,7 +70,6 @@ export const createSeriesSchema = z.object({
   startsOn: daySchema,
   startTime: timeSchema,
   locationId: z.string().nullish(),
-  paceGroups: paceGroupsSchema,
   notes: z.string().trim().max(1000).nullish(),
 });
 export type CreateSeries = z.infer<typeof createSeriesSchema>;
@@ -165,9 +156,6 @@ export const updateMyMembershipSchema = z.object({
 
 export const myRsvpSchema = z.object({
   status: rsvpStatusSchema,
-  paceGroup: z.string().nullable(),
-  guests: z.number(),
-  note: z.string().nullable(),
 });
 export type MyRsvp = z.infer<typeof myRsvpSchema>;
 
@@ -178,11 +166,9 @@ export const clubRunSchema = z.object({
   title: z.string(),
   startsAt: z.iso.datetime(),
   location: locationSchema.nullable(),
-  paceGroups: z.array(paceGroupSchema),
   notes: z.string().nullable(),
   status: z.enum(['scheduled', 'cancelled']),
   cancelledReason: z.string().nullable(),
-  /** Members going, plus their guests. */
   going: z.number(),
   maybe: z.number(),
   myRsvp: myRsvpSchema.nullable(),
@@ -193,9 +179,6 @@ export const attendeeSchema = z.object({
   userId: z.string(),
   name: z.string(),
   status: rsvpStatusSchema.exclude(['not_going']),
-  paceGroup: z.string().nullable(),
-  guests: z.number(),
-  note: z.string().nullable(),
 });
 export type Attendee = z.infer<typeof attendeeSchema>;
 
@@ -211,7 +194,6 @@ export const createClubRunSchema = z.object({
   title: z.string().trim().min(1).max(100),
   startsAt: z.iso.datetime({ offset: true }),
   locationId: z.string().nullish(),
-  paceGroups: paceGroupsSchema,
   notes: z.string().trim().max(1000).nullish(),
 });
 export type CreateClubRun = z.infer<typeof createClubRunSchema>;
@@ -224,8 +206,5 @@ export type UpdateClubRun = z.infer<typeof updateClubRunSchema>;
 
 export const rsvpInputSchema = z.object({
   status: rsvpStatusSchema,
-  paceGroup: z.string().trim().max(40).nullish(),
-  guests: z.number().int().min(0).max(10).default(0),
-  note: z.string().trim().max(200).nullish(),
 });
 export type RsvpInput = z.infer<typeof rsvpInputSchema>;

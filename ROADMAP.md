@@ -31,8 +31,8 @@ See [docs/PRIVACY.md](docs/PRIVACY.md), phase 1.
 ### M2 – Run clubs (in progress)
 
 - ✅ Clubs with owner, organiser and member roles; join by link or code, optional approval
-- ✅ Meeting points, repeating runs (RRULE) with pace groups, one-off runs, cancellations
-- ✅ RSVP (going / maybe / not going) with pace group and guests
+- ✅ Meeting points, repeating runs (RRULE), one-off runs, cancellations
+- ✅ RSVP (going / maybe / not going)
 - Café menu, coffee order with a saved "usual"
 - Order cutoff that locks orders and builds a summary any member can show the cashier on their phone (big text, works offline)
 - Weather forecast (Open-Meteo), Web Push reminders, cancellations

@@ -45,7 +45,6 @@ export function ensureUpcomingRuns(
           title: s.title,
           startsAt,
           locationId: s.locationId,
-          paceGroups: s.paceGroups,
           notes: s.notes,
         })),
       )
@@ -97,7 +96,6 @@ export function syncFutureRuns(tx: Tx, series: Series, now = new Date()) {
     .set({
       title: series.title,
       locationId: series.locationId,
-      paceGroups: series.paceGroups,
       notes: series.notes,
     })
     .where(future)

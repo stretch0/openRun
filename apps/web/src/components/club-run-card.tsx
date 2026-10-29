@@ -9,7 +9,7 @@ export const RSVP_LABELS: Record<RsvpStatus, string> = {
   not_going: "Can't make it",
 };
 
-/** Going / Maybe / Can't make it, keeping any pace group and guests already set. */
+/** Going / Maybe / Can't make it. */
 export function RsvpButtons({ run }: { run: ClubRun }) {
   const rsvp = useClubMutation(clubApi(run.clubId).rsvp);
   return (
@@ -30,15 +30,7 @@ export function RsvpButtons({ run }: { run: ClubRun }) {
             }`}
             aria-pressed={chosen}
             disabled={rsvp.isPending}
-            onClick={() =>
-              rsvp.mutate({
-                runId: run.id,
-                status,
-                paceGroup: run.myRsvp?.paceGroup,
-                guests: run.myRsvp?.guests ?? 0,
-                note: run.myRsvp?.note,
-              })
-            }
+            onClick={() => rsvp.mutate({ runId: run.id, status })}
           >
             {RSVP_LABELS[status]}
           </button>

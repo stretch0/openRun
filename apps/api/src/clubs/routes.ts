@@ -124,7 +124,6 @@ function toSeries(s: typeof schema.clubRunSeries.$inferSelect): Series {
     startsOn: s.startsOn,
     startTime: s.startTime,
     locationId: s.locationId,
-    paceGroups: s.paceGroups,
     notes: s.notes,
     ended: s.endedAt !== null,
   };
@@ -201,9 +200,7 @@ function toRuns(c: Ctx, runs: RunRow[]): ClubRun[] {
     );
     const forRun = rsvps.filter((r) => r.clubRunId === run.id);
     const tally = (status: string) =>
-      forRun
-        .filter((r) => r.status === status)
-        .reduce((n, r) => n + 1 + r.guests, 0);
+      forRun.filter((r) => r.status === status).length;
     return {
       id: run.id,
       clubId: run.clubId,
@@ -211,20 +208,12 @@ function toRuns(c: Ctx, runs: RunRow[]): ClubRun[] {
       title: run.title,
       startsAt: run.startsAt.toISOString(),
       location: run.locationId ? (locations.get(run.locationId) ?? null) : null,
-      paceGroups: run.paceGroups,
       notes: run.notes,
       status: run.status,
       cancelledReason: run.cancelledReason,
       going: tally('going'),
       maybe: tally('maybe'),
-      myRsvp: mine
-        ? {
-            status: mine.status,
-            paceGroup: mine.paceGroup,
-            guests: mine.guests,
-            note: mine.note,
-          }
-        : null,
+      myRsvp: mine ? { status: mine.status } : null,
     };
   });
 }
@@ -250,9 +239,6 @@ function toRunDetail(
       userId: schema.rsvp.userId,
       name: schema.user.name,
       status: schema.rsvp.status,
-      paceGroup: schema.rsvp.paceGroup,
-      guests: schema.rsvp.guests,
-      note: schema.rsvp.note,
     })
     .from(schema.rsvp)
     .innerJoin(schema.user, eq(schema.user.id, schema.rsvp.userId))
@@ -723,14 +709,7 @@ export const clubRoutes = new Hono<AuthedEnv>()
     if (run.status === 'cancelled') {
       return c.json({ error: 'This run has been cancelled' }, 400);
     }
-    const input = c.req.valid('json');
-    const values = {
-      status: input.status,
-      paceGroup:
-        input.status === 'not_going' ? null : (input.paceGroup ?? null),
-      guests: input.status === 'not_going' ? 0 : input.guests,
-      note: input.note ?? null,
-    };
+    const values = { status: c.req.valid('json').status };
     c.get('db')
       .insert(schema.rsvp)
       .values({ ...values, clubRunId: run.id, userId: m.userId })

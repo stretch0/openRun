@@ -180,9 +180,9 @@ Phase 2 of `docs/PRIVACY.md` takes precedence where they differ. In particular, 
 - **club:** name, description, visibility, join code.
 - **club_member:** role is owner, organiser or member.
 - **club_location:** lat/lng and meeting-point notes.
-- **club_run_series:** RRULE, default location, pace groups, and an order cutoff in minutes.
+- **club_run_series:** RRULE, default location, and an order cutoff in minutes.
 - **club_run:** dated runs created ahead of time from the series, so each one can be edited or cancelled.
-- **rsvp:** going, maybe or no, plus pace group and guests.
+- **rsvp:** going, maybe or no.
 - **menu_item:** a club's café menu, with options.
 - **coffee_order:** rsvp, item, options and note, plus a saved "usual" per user.
 - **club_share:** a snapshot of a run a member chose to share (summary, optionally a privacy-zoned track).

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "dff935c0-25f7-4319-94c8-f83d571ef384",
+  "id": "4af1f90d-da09-4bab-8a18-d125ee27c174",
   "prevId": "05582646-7b1a-4e6e-ac7c-c04b67cd4e6e",
   "tables": {
     "account": {
@@ -1720,14 +1720,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "pace_groups": {
-          "name": "pace_groups",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'[]'"
-        },
         "notes": {
           "name": "notes",
           "type": "text",
@@ -1880,14 +1872,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "pace_groups": {
-          "name": "pace_groups",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'[]'"
-        },
         "notes": {
           "name": "notes",
           "type": "text",
@@ -1987,28 +1971,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
-        },
-        "pace_group": {
-          "name": "pace_group",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "guests": {
-          "name": "guests",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "note": {
-          "name": "note",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
           "autoincrement": false
         },
         "created_at": {

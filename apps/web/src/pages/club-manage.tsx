@@ -1,7 +1,7 @@
 import { type FormEvent, Suspense, lazy, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { WEEKDAYS, zonedTime } from '@openrun/domain';
-import type { Club, Member, PaceGroup } from '@openrun/schemas';
+import type { Club, Member } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
 import { clubApi, useClub, useClubMutation } from '../lib/clubs';
 import { useMe } from '../lib/queries';
@@ -17,15 +17,6 @@ const DAY_LABELS: Record<(typeof WEEKDAYS)[number], string> = {
   SA: 'Sat',
   SU: 'Sun',
 };
-
-/** "5:00/km, 6:00/km" -> pace groups. */
-function parsePaceGroups(text: string): PaceGroup[] {
-  return text
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((name) => ({ name }));
-}
 
 export function ClubManagePage() {
   const { id = '' } = useParams();
@@ -111,7 +102,6 @@ function RepeatingRuns({ club }: { club: Club }) {
         startsOn: String(form.get('startsOn')),
         startTime: String(form.get('startTime')),
         locationId: String(form.get('seriesLocation') ?? '') || null,
-        paceGroups: parsePaceGroups(String(form.get('seriesPaceGroups') ?? '')),
         notes: String(form.get('seriesNotes') ?? '') || null,
       },
       { onSuccess: () => setAdding(false) },
@@ -139,7 +129,6 @@ function RepeatingRuns({ club }: { club: Club }) {
                   {[
                     `${s.summary} at ${s.startTime}`,
                     locationName(s.locationId),
-                    s.paceGroups.map((g) => g.name).join(', '),
                   ]
                     .filter(Boolean)
                     .join(' · ')}
@@ -244,20 +233,6 @@ function RepeatingRuns({ club }: { club: Club }) {
           </div>
           <LocationSelect club={club} name="seriesLocation" />
           <div>
-            <label className="label" htmlFor="seriesPaceGroups">
-              Pace groups
-            </label>
-            <input
-              className="input"
-              id="seriesPaceGroups"
-              name="seriesPaceGroups"
-              placeholder="e.g. 5:00/km, 5:45/km, 6:30/km"
-            />
-            <p className="mt-1 text-xs text-stone-500">
-              Separate with commas. Leave empty for one group.
-            </p>
-          </div>
-          <div>
             <label className="label" htmlFor="seriesNotes">
               Notes
             </label>
@@ -310,7 +285,6 @@ function OneOffRun({ club }: { club: Club }) {
         title: String(form.get('runTitle')),
         startsAt: zonedTime(day, time, club.timezone).toISOString(),
         locationId: String(form.get('runLocation') ?? '') || null,
-        paceGroups: parsePaceGroups(String(form.get('runPaceGroups') ?? '')),
         notes: String(form.get('runNotes') ?? '') || null,
       },
       { onSuccess: (run) => navigate(`/clubs/${club.id}/runs/${run.id}`) },
@@ -345,17 +319,6 @@ function OneOffRun({ club }: { club: Club }) {
         />
       </div>
       <LocationSelect club={club} name="runLocation" />
-      <div>
-        <label className="label" htmlFor="runPaceGroups">
-          Pace groups
-        </label>
-        <input
-          className="input"
-          id="runPaceGroups"
-          name="runPaceGroups"
-          placeholder="Optional, separated with commas"
-        />
-      </div>
       <div>
         <label className="label" htmlFor="runNotes">
           Notes

@@ -252,7 +252,6 @@ test.describe('clubs', () => {
     for (const day of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']) {
       await page.getByText(day, { exact: true }).click();
     }
-    await page.getByLabel('Pace groups').first().fill('Steady, Chatty');
     await page.getByRole('button', { name: 'Add repeating run' }).click();
     await expect(page.getByText(/Every Monday, .* at 08:00/)).toBeVisible();
 
@@ -269,10 +268,7 @@ test.describe('clubs', () => {
     await firstRun.getByRole('button', { name: 'Going' }).click();
     await expect(firstRun.getByText('1 going')).toBeVisible();
     await firstRun.getByRole('link').first().click();
-    await page.getByLabel('Pace group').selectOption('Chatty');
-    await page.getByLabel('Bringing guests').fill('1');
-    await page.getByRole('button', { name: 'Update' }).click();
-    await expect(page.getByRole('heading', { name: '2 going' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '1 going' })).toBeVisible();
     const runUrl = page.url();
 
     // A second runner joins with the invite link and says maybe.
@@ -297,11 +293,12 @@ test.describe('clubs', () => {
     await bea.close();
 
     await page.goto(runUrl);
-    const going = page.locator('section', { hasText: '2 going' });
-    await expect(going.getByText('Chatty', { exact: true })).toBeVisible();
-    await expect(page.getByText(/Ada Runner\s*\+1/)).toBeVisible();
     await expect(
-      page.getByRole('heading', { name: '2 going · 1 maybe' }),
+      page.getByRole('heading', { name: '1 going · 1 maybe' }),
+    ).toBeVisible();
+    const attendees = page.locator('section', { hasText: '1 going' });
+    await expect(
+      attendees.getByText('Ada Runner', { exact: true }),
     ).toBeVisible();
     await expect(page.getByText('Bea', { exact: true })).toBeVisible();
   });

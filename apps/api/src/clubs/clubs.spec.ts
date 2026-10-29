@@ -166,7 +166,6 @@ describe('clubs', () => {
       days: ['SA'],
       startsOn: today(),
       startTime: '08:00',
-      paceGroups: [{ name: '5:00/km' }, { name: '6:00/km' }],
     };
     expect(
       (
@@ -237,18 +236,14 @@ describe('clubs', () => {
           ann.cookie,
           'PUT',
           `/api/clubs/${club.id}/runs/${first.id}/rsvp`,
-          {
-            status: 'going',
-            paceGroup: '6:00/km',
-            guests: 1,
-          },
+          { status: 'going' },
         )
       ).json(),
     );
     expect(rsvp).toMatchObject({
-      going: 2,
-      myRsvp: { status: 'going', paceGroup: '6:00/km', guests: 1 },
-      attendees: [{ name: 'ann', status: 'going', guests: 1 }],
+      going: 1,
+      myRsvp: { status: 'going' },
+      attendees: [{ name: 'ann', status: 'going' }],
     });
 
     // Changing the schedule keeps RSVPs on runs that still happen.

@@ -1,13 +1,7 @@
-import { type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import {
-  type Attendee,
-  type ClubRunDetail,
-  type RsvpStatus,
-  rsvpStatusSchema,
-} from '@openrun/schemas';
+import type { Attendee, ClubRunDetail } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
-import { RSVP_LABELS } from '../components/club-run-card';
+import { RsvpButtons } from '../components/club-run-card';
 import { clubApi, useClubMutation, useClubRun } from '../lib/clubs';
 import { ApiError } from '../lib/api';
 import { formatRunTime, mapLink } from '../lib/format';
@@ -75,119 +69,25 @@ export function ClubRunPage() {
         </section>
       )}
 
-      {!cancelled && <RsvpForm run={r} />}
+      {!cancelled && <Rsvp run={r} />}
       <Attendees run={r} />
       {r.canManage && <OrganiserActions run={r} />}
     </>
   );
 }
 
-function RsvpForm({ run }: { run: ClubRunDetail }) {
-  const rsvp = useClubMutation(clubApi(run.clubId).rsvp);
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    rsvp.mutate({
-      runId: run.id,
-      status: form.get('status') as RsvpStatus,
-      paceGroup: String(form.get('paceGroup') ?? '') || null,
-      guests: Number(form.get('guests') ?? 0),
-      note: String(form.get('note') ?? '') || null,
-    });
-  };
-  const mine = run.myRsvp;
+function Rsvp({ run }: { run: ClubRunDetail }) {
   return (
-    <form
-      onSubmit={onSubmit}
-      className="card space-y-3"
-      key={JSON.stringify(mine)}
-    >
+    <section className="card space-y-3">
       <h2 className="font-semibold">Are you coming?</h2>
-      <fieldset className="flex gap-1.5">
-        <legend className="sr-only">Your answer</legend>
-        {rsvpStatusSchema.options.map((status) => (
-          <label
-            key={status}
-            className="flex-1 cursor-pointer rounded-lg border border-stone-300 px-2 py-2 text-center text-sm font-medium has-[:checked]:border-brand-600 has-[:checked]:bg-brand-600 has-[:checked]:text-white dark:border-stone-700"
-          >
-            <input
-              type="radio"
-              name="status"
-              value={status}
-              defaultChecked={(mine?.status ?? 'going') === status}
-              className="sr-only"
-            />
-            {RSVP_LABELS[status]}
-          </label>
-        ))}
-      </fieldset>
-      <div className="grid grid-cols-2 gap-3">
-        {run.paceGroups.length > 0 && (
-          <div>
-            <label className="label" htmlFor="paceGroup">
-              Pace group
-            </label>
-            <select
-              className="input"
-              id="paceGroup"
-              name="paceGroup"
-              defaultValue={mine?.paceGroup ?? ''}
-            >
-              <option value="">Not sure</option>
-              {run.paceGroups.map((g) => (
-                <option key={g.name} value={g.name}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        <div>
-          <label className="label" htmlFor="guests">
-            Bringing guests
-          </label>
-          <input
-            className="input"
-            id="guests"
-            name="guests"
-            type="number"
-            min="0"
-            max="10"
-            defaultValue={mine?.guests ?? 0}
-          />
-        </div>
-      </div>
-      <div>
-        <label className="label" htmlFor="note">
-          Note for the organisers
-        </label>
-        <input
-          className="input"
-          id="note"
-          name="note"
-          maxLength={200}
-          defaultValue={mine?.note ?? ''}
-          placeholder="e.g. running late, meet you at the gate"
-        />
-      </div>
-      <FormError message={rsvp.error?.message} />
-      <button className="btn-primary" disabled={rsvp.isPending}>
-        {mine ? 'Update' : 'Save'}
-      </button>
-    </form>
+      <RsvpButtons run={run} />
+    </section>
   );
 }
 
 function Attendees({ run }: { run: ClubRunDetail }) {
   const going = run.attendees.filter((a) => a.status === 'going');
   const maybe = run.attendees.filter((a) => a.status === 'maybe');
-  // Group by pace group, in the order the organisers listed them.
-  const groups = [
-    ...run.paceGroups.map((g) => g.name),
-    ...new Set(going.map((a) => a.paceGroup ?? '')),
-  ].filter((g, i, all) => all.indexOf(g) === i);
-  const inGroup = (g: string) => going.filter((a) => (a.paceGroup ?? '') === g);
-
   return (
     <section className="card space-y-3">
       <h2 className="font-semibold">
@@ -196,16 +96,7 @@ function Attendees({ run }: { run: ClubRunDetail }) {
       {going.length === 0 && (
         <p className="text-sm text-stone-500">Nobody yet. Be the first!</p>
       )}
-      {groups.map((g) =>
-        inGroup(g).length ? (
-          <div key={g || 'none'}>
-            <p className="text-xs font-medium text-stone-500">
-              {g || 'No pace group'}
-            </p>
-            <People people={inGroup(g)} />
-          </div>
-        ) : null,
-      )}
+      {going.length > 0 && <People people={going} />}
       {maybe.length > 0 && (
         <div>
           <p className="text-xs font-medium text-stone-500">Maybe</p>
@@ -223,11 +114,8 @@ function People({ people }: { people: Attendee[] }) {
         <li
           key={p.userId}
           className="rounded-full bg-stone-100 px-2.5 py-1 dark:bg-stone-800"
-          title={p.note ?? undefined}
         >
           {p.name}
-          {p.guests > 0 && <span className="text-stone-500"> +{p.guests}</span>}
-          {p.note && <span className="text-stone-500"> · {p.note}</span>}
         </li>
       ))}
     </ul>
