@@ -14,6 +14,7 @@ import { adminRoutes } from './routes/admin.js';
 import { exportRoutes } from './routes/export.js';
 import { instanceRoutes } from './routes/instance.js';
 import { meRoutes } from './routes/me.js';
+import { placeRoutes } from './routes/places.js';
 import { privacyRoutes } from './routes/privacy.js';
 import { shoeRoutes } from './routes/shoes.js';
 import { statsRoutes } from './routes/stats.js';
@@ -53,6 +54,7 @@ export function createApp({
   app.route('/api/export', exportRoutes);
   app.route('/api/privacy', privacyRoutes);
   app.route('/api/clubs', clubRoutes);
+  app.route('/api/places', placeRoutes);
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));
 
   if (config.webDir) serveWeb(app, config.webDir);

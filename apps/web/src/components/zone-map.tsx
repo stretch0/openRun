@@ -19,6 +19,7 @@ export default function ZoneMap({
   draft,
   onPick,
   label = 'Map: tap to place the centre of the zone',
+  zoom = 13,
 }: {
   /** Accessible name; describes what tapping places. */
   label?: string;
@@ -27,6 +28,8 @@ export default function ZoneMap({
   zones: Circle[];
   draft: Circle | null;
   onPick: (point: { lat: number; lng: number }) => void;
+  /** How close to zoom in on `centre`. */
+  zoom?: number;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
@@ -40,7 +43,7 @@ export default function ZoneMap({
       container: container.current,
       style: OSM_STYLE,
       center: centre ? [centre.lng, centre.lat] : [0, 30],
-      zoom: centre ? 13 : 1,
+      zoom: centre ? zoom : 1,
       attributionControl: { compact: true },
     });
     m.addControl(new NavigationControl({ showCompass: false }));
@@ -92,9 +95,8 @@ export default function ZoneMap({
   }, [zones, draft, loaded]);
 
   useEffect(() => {
-    if (centre)
-      map.current?.flyTo({ center: [centre.lng, centre.lat], zoom: 13 });
-  }, [centre]);
+    if (centre) map.current?.flyTo({ center: [centre.lng, centre.lat], zoom });
+  }, [centre, zoom]);
 
   return (
     <div

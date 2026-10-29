@@ -5,3 +5,4 @@ export * from './shoe.js';
 export * from './stats.js';
 export * from './privacy.js';
 export * from './club.js';
+export * from './place.js';

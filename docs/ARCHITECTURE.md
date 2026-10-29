@@ -66,6 +66,7 @@ The rules are in [PRIVACY.md](PRIVACY.md). How they're implemented:
 - Repeating runs are stored as a weekly RRULE subset plus a local start time and the club's time zone. `libs/domain/src/schedule.ts` turns them into instants, handling clock changes (a skipped time moves later; a repeated time uses the first).
 - Runs exist eight weeks ahead in `club_run`, created on demand when a club or its runs are viewed (`ensureUpcomingRuns`, safe to repeat thanks to a unique index on series and start time). Editing a series updates future runs, removes ones no longer on the schedule and keeps RSVPs on the rest. A scheduler arrives with reminders in M2 part 3.
 - Someone who leaves a club, or is removed, takes their RSVPs with them.
+- Meeting point search (`GET /api/places`) proxies a Nominatim-compatible geocoder (`PLACE_SEARCH_URL`, empty to turn it off). Requests are queued to one a second and results cached in memory, as Nominatim's public usage policy asks; the app searches on submit, never as you type.
 
 ## Auth
 

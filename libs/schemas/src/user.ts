@@ -31,5 +31,7 @@ export const instanceInfoSchema = z.object({
   contact: z.string().nullable(),
   /** True until the first account has been created. */
   needsSetup: z.boolean(),
+  /** Whether meeting points can be found by searching for a place. */
+  placeSearch: z.boolean(),
 });
 export type InstanceInfo = z.infer<typeof instanceInfoSchema>;

@@ -29,6 +29,10 @@ const envSchema = z.object({
   LOG_REQUESTS: bool.optional(),
   /** Set when running behind a reverse proxy that sets X-Forwarded-For. */
   TRUST_PROXY: bool.default(false),
+  /** Nominatim-compatible place search for meeting points. Empty turns it off. */
+  PLACE_SEARCH_URL: z
+    .string()
+    .default('https://nominatim.openstreetmap.org/search'),
 });
 
 export type Config = ReturnType<typeof loadConfig>;
@@ -69,5 +73,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     passwordLogin: e.PASSWORD_LOGIN,
     logRequests: e.LOG_REQUESTS ?? !production,
     trustProxy: e.TRUST_PROXY,
+    placeSearchUrl: e.PLACE_SEARCH_URL.trim() || null,
   };
 }

@@ -255,6 +255,33 @@ test.describe('clubs', () => {
     await page.getByRole('button', { name: 'Add repeating run' }).click();
     await expect(page.getByText(/Every Monday, .* at 08:00/)).toBeVisible();
 
+    // Find the meeting point by searching for it.
+    await page.route('**/api/places?*', (route) =>
+      route.fulfill({
+        json: [
+          {
+            name: 'Victoria Park',
+            address: 'Victoria Park, London, E9, United Kingdom',
+            lat: 51.536,
+            lng: -0.039,
+          },
+        ],
+      }),
+    );
+    await page.getByRole('button', { name: 'Add a meeting point' }).click();
+    await page.getByLabel('Search for a place').fill('victoria park');
+    await page.getByRole('button', { name: 'Search' }).click();
+    await page
+      .getByRole('list', { name: 'Places found' })
+      .getByRole('button', { name: /Victoria Park/ })
+      .click();
+    // Picking a place fills in an empty name.
+    await expect(page.locator('#pointName')).toHaveValue('Victoria Park');
+    await page.getByRole('button', { name: 'Save meeting point' }).click();
+    await expect(
+      page.getByRole('listitem').filter({ hasText: 'Victoria Park' }),
+    ).toBeVisible();
+
     await page.getByRole('link', { name: '← Parkside Runners' }).click();
     const code = (
       await page

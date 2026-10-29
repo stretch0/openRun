@@ -1,10 +1,11 @@
-import { type FormEvent, Suspense, lazy, useState } from 'react';
+import { type FormEvent, Suspense, lazy, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { WEEKDAYS, zonedTime } from '@openrun/domain';
-import type { Club, Member } from '@openrun/schemas';
+import type { Club, Member, Place } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
 import { clubApi, useClub, useClubMutation } from '../lib/clubs';
-import { useMe } from '../lib/queries';
+import { usePlaceSearch } from '../lib/places';
+import { useInstance, useMe } from '../lib/queries';
 
 const PointMap = lazy(() => import('../components/zone-map'));
 
@@ -374,6 +375,14 @@ function MeetingPoints({ club }: { club: Club }) {
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
   const first = club.locations[0];
+  const near = useMemo(
+    () => (first ? { lat: first.lat, lng: first.lng } : null),
+    [first],
+  );
+  const choose = (place: { lat: number; lng: number; name?: string }) => {
+    setPoint({ lat: place.lat, lng: place.lng });
+    if (place.name && !name.trim()) setName(place.name);
+  };
 
   return (
     <section className="card space-y-3">
@@ -400,6 +409,7 @@ function MeetingPoints({ club }: { club: Club }) {
       )}
       {adding ? (
         <div className="space-y-3">
+          <FindPlace near={near} onChoose={choose} />
           <Suspense
             fallback={
               <div className="h-64 rounded-xl bg-stone-100 dark:bg-stone-800" />
@@ -407,15 +417,18 @@ function MeetingPoints({ club }: { club: Club }) {
           >
             <PointMap
               label="Map: tap where the club meets"
-              centre={
-                point ?? (first ? { lat: first.lat, lng: first.lng } : null)
-              }
+              centre={point ?? near}
+              zoom={16}
               zones={club.locations.map((l) => ({ ...l, radiusM: 30 }))}
               draft={point ? { ...point, radiusM: 30 } : null}
               onPick={setPoint}
             />
           </Suspense>
-          <p className="text-sm text-stone-500">Tap the map where you meet.</p>
+          <p className="text-sm text-stone-500">
+            {point
+              ? 'Tap the map to move the pin to the exact spot.'
+              : 'Or tap the map where you meet.'}
+          </p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label" htmlFor="pointName">
@@ -478,6 +491,111 @@ function MeetingPoints({ club }: { club: Club }) {
         </button>
       )}
     </section>
+  );
+}
+
+/** Search for a place by name, or use where you're standing now. */
+function FindPlace({
+  near,
+  onChoose,
+}: {
+  near: { lat: number; lng: number } | null;
+  onChoose: (place: { lat: number; lng: number; name?: string }) => void;
+}) {
+  const { data: instance } = useInstance();
+  const [query, setQuery] = useState('');
+  const [submitted, setSubmitted] = useState('');
+  const results = usePlaceSearch(submitted, near);
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState<string>();
+  const canLocate = 'geolocation' in navigator;
+
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitted(query.trim());
+  };
+  const pick = (place: Place) => {
+    onChoose(place);
+    setSubmitted('');
+  };
+  const locate = () => {
+    setLocating(true);
+    setLocateError(undefined);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        onChoose({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      () => {
+        setLocating(false);
+        setLocateError("Couldn't get your location. Check location access.");
+      },
+      { enableHighAccuracy: true, timeout: 15_000 },
+    );
+  };
+
+  return (
+    <div className="space-y-2">
+      {instance?.placeSearch && (
+        <form onSubmit={onSubmit} role="search" className="flex gap-2">
+          <label className="sr-only" htmlFor="placeSearch">
+            Search for a place
+          </label>
+          <input
+            className="input"
+            id="placeSearch"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search, e.g. Victoria Park bandstand"
+            enterKeyHint="search"
+          />
+          <button
+            className="btn-secondary shrink-0"
+            disabled={query.trim().length < 2 || results.isFetching}
+          >
+            {results.isFetching ? 'Searching…' : 'Search'}
+          </button>
+        </form>
+      )}
+      {submitted && results.data && (
+        <ul
+          className="divide-y divide-stone-200 rounded-xl border border-stone-200 text-sm dark:divide-stone-800 dark:border-stone-800"
+          aria-label="Places found"
+        >
+          {results.data.length === 0 && (
+            <li className="px-3 py-2 text-stone-500">
+              Nothing found. Try a street, park or postcode.
+            </li>
+          )}
+          {results.data.map((place) => (
+            <li key={`${place.lat},${place.lng}`}>
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left hover:bg-stone-100 dark:hover:bg-stone-800"
+                onClick={() => pick(place)}
+              >
+                <span className="font-medium">{place.name}</span>
+                <span className="block truncate text-xs text-stone-500">
+                  {place.address}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <FormError message={results.error?.message ?? locateError} />
+      {canLocate && (
+        <button
+          type="button"
+          className="text-sm font-medium text-brand-600"
+          onClick={locate}
+          disabled={locating}
+        >
+          {locating ? 'Finding you…' : "Use where I'm standing"}
+        </button>
+      )}
+    </div>
   );
 }
 
