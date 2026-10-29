@@ -113,6 +113,8 @@ export const clubSummarySchema = z.object({
   status: memberStatusSchema,
   shareLevel: shareLevelSchema,
   muted: z.boolean(),
+  /** Whether I appear by name in the club's highlights. */
+  highlights: z.boolean(),
   memberCount: z.number(),
   nextRun: nextRunSchema.nullable(),
 });
@@ -167,6 +169,7 @@ export const updateMyMembershipSchema = z.object({
   shareLevel: shareLevelSchema.optional(),
   /** No notifications from this club. */
   muted: z.boolean().optional(),
+  highlights: z.boolean().optional(),
 });
 
 export const myRsvpSchema = z.object({
@@ -206,6 +209,20 @@ export const attendeeSchema = z.object({
 });
 export type Attendee = z.infer<typeof attendeeSchema>;
 
+/** A run a member shared with the club: a copy, not their run log. */
+export const clubShareSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  memberName: z.string(),
+  title: z.string(),
+  startedAt: z.iso.datetime(),
+  distanceM: z.number(),
+  durationS: z.number(),
+  /** [lat, lng] with privacy zones as null; null if shared without a map. */
+  track: z.array(z.tuple([z.number(), z.number()]).nullable()).nullable(),
+});
+export type ClubShare = z.infer<typeof clubShareSchema>;
+
 export const clubRunDetailSchema = clubRunSchema.extend({
   clubName: z.string(),
   timezone: z.string(),
@@ -213,6 +230,8 @@ export const clubRunDetailSchema = clubRunSchema.extend({
   attendees: z.array(attendeeSchema),
   /** Null when the club has nothing on its menu. */
   coffee: runCoffeeSchema.nullable(),
+  /** Runs members shared that started around this run. */
+  shares: z.array(clubShareSchema),
 });
 export type ClubRunDetail = z.infer<typeof clubRunDetailSchema>;
 
@@ -235,3 +254,37 @@ export const rsvpInputSchema = z.object({
   status: rsvpStatusSchema,
 });
 export type RsvpInput = z.infer<typeof rsvpInputSchema>;
+
+/** Fun, never competitive: see libs/domain/highlights. */
+export const clubHighlightsSchema = z.object({
+  thisMonth: z.object({
+    turnout: z.number(),
+    runs: z.number(),
+    sharedDistanceM: z.number(),
+  }),
+  streaks: z.array(
+    z.object({ userId: z.string(), name: z.string(), weeks: z.number() }),
+  ),
+  moments: z.array(
+    z.object({
+      userId: z.string(),
+      name: z.string(),
+      text: z.string(),
+      at: z.iso.datetime(),
+    }),
+  ),
+  /** Recently shared runs. */
+  recentShares: z.array(clubShareSchema),
+});
+export type ClubHighlights = z.infer<typeof clubHighlightsSchema>;
+
+/** A club I could share one of my runs with. */
+export const shareTargetSchema = z.object({
+  clubId: z.string(),
+  clubName: z.string(),
+  shareLevel: shareLevelSchema,
+  shared: z.boolean(),
+  /** Whether a share includes the route (level and privacy settings allow). */
+  withMap: z.boolean(),
+});
+export type ShareTarget = z.infer<typeof shareTargetSchema>;

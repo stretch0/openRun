@@ -22,6 +22,8 @@ import {
   useActivityStream,
   useDeleteActivity,
   useUpdateActivity,
+  useShareRun,
+  useShareTargets,
 } from '../lib/activities';
 import { ApiError } from '../lib/api';
 import { SPORT_LABELS, formatDateTime, ordinal, pbLabel } from '../lib/format';
@@ -119,6 +121,8 @@ export function ActivityPage() {
           />
         </>
       )}
+
+      <ShareWithClubs activity={a} />
 
       <Splits activity={a} me={me} />
       <Laps activity={a} units={me.units} />
@@ -415,9 +419,18 @@ function VisibilityPicker({ activity }: { activity: Activity }) {
         className="rounded-md bg-transparent py-0.5 font-medium text-stone-700 outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 dark:text-stone-300"
         value={activity.visibility}
         disabled={update.isPending}
-        onChange={(e) =>
-          update.mutate({ visibility: e.target.value as Visibility })
-        }
+        onChange={(e) => {
+          const visibility = e.target.value as Visibility;
+          if (
+            visibility === 'private' &&
+            !window.confirm(
+              'Make this run private? It will be taken back from any clubs it’s shared with.',
+            )
+          ) {
+            return;
+          }
+          update.mutate({ visibility });
+        }}
       >
         {visibilitySchema.options.map((v) => (
           <option key={v} value={v}>
@@ -426,6 +439,57 @@ function VisibilityPicker({ activity }: { activity: Activity }) {
         ))}
       </select>
     </label>
+  );
+}
+
+/** Send a copy of this run to clubs, as the sharing level for each allows. */
+function ShareWithClubs({ activity }: { activity: Activity }) {
+  const { data: targets } = useShareTargets(activity.id);
+  const share = useShareRun(activity.id);
+  if (!targets?.length) return null;
+  return (
+    <section className="card space-y-2" aria-label="Share with clubs">
+      <h2 className="font-semibold">Share with clubs</h2>
+      <p className="text-sm text-stone-500">
+        Clubs get a copy: changing or deleting this run later doesn't change it,
+        and you can take it back.
+      </p>
+      <ul className="divide-y divide-stone-200 text-sm dark:divide-stone-800">
+        {targets.map((t) => (
+          <li key={t.clubId} className="flex items-center gap-3 py-2">
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">{t.clubName}</p>
+              <p className="text-stone-500">
+                {t.shareLevel === 'attendance' ? (
+                  <>
+                    You share attendance only.{' '}
+                    <Link to={`/clubs/${t.clubId}`} className="text-brand-600">
+                      Change
+                    </Link>
+                  </>
+                ) : t.withMap ? (
+                  'Distance, time, pace and the route (privacy zones cut out)'
+                ) : (
+                  'Distance, time and pace'
+                )}
+              </p>
+            </div>
+            {t.shareLevel !== 'attendance' && (
+              <button
+                className={t.shared ? 'btn-secondary' : 'btn-primary'}
+                disabled={share.isPending}
+                onClick={() =>
+                  share.mutate({ clubId: t.clubId, share: !t.shared })
+                }
+              >
+                {t.shared ? 'Take back' : 'Share'}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+      <FormError message={share.error?.message} />
+    </section>
   );
 }
 

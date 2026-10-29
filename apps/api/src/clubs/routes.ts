@@ -2,11 +2,18 @@ import { zValidator } from '@hono/zod-validator';
 import { and, asc, count, eq, gte, inArray, lt, ne, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { schema } from '@openrun/db';
-import { describeRule, formatRule, parseRule } from '@openrun/domain';
+import {
+  clubHighlights,
+  describeRule,
+  describeWeather,
+  formatRule,
+  parseRule,
+} from '@openrun/domain';
 import {
   type Attendee,
   type Club,
   type ClubLocation,
+  type ClubHighlights,
   type ClubPreview,
   type ClubRun,
   type ClubRunDetail,
@@ -53,6 +60,7 @@ import {
 } from './helpers.js';
 import { noticeJoinRequest, noticeRunChange } from './notices.js';
 import { ensureUpcomingRuns, syncFutureRuns } from './runs.js';
+import { listShares } from './shares.js';
 
 type ClubRow = typeof schema.club.$inferSelect;
 type RunRow = typeof schema.clubRun.$inferSelect;
@@ -106,6 +114,7 @@ function toSummary(c: Ctx, club: ClubRow, m: Membership): ClubSummary {
     status: m.status,
     shareLevel: m.shareLevel,
     muted: m.muted,
+    highlights: m.highlights,
     memberCount: memberCount(c, club.id),
     nextRun: isActive(m) ? nextRun(c, club.id) : null,
   };
@@ -255,6 +264,7 @@ function toRunDetail(
     canManage: canManage(m),
     attendees,
     coffee: runCoffee(c.get('db'), run, m.userId),
+    shares: listShares(c.get('db'), { runId: run.id }),
   };
 }
 
@@ -471,8 +481,8 @@ export const clubRoutes = new Hono<AuthedEnv>()
     ) {
       return forbidden(c);
     }
-    // Someone who leaves takes their RSVPs and coffee orders with them, so
-    // their name doesn't stay on the club's runs.
+    // Someone who leaves takes their RSVPs, coffee orders and shared runs
+    // with them, so their name doesn't stay on the club's runs.
     c.get('db').transaction((tx) => {
       const runIds = tx
         .select({ id: schema.clubRun.id })
@@ -487,6 +497,14 @@ export const clubRoutes = new Hono<AuthedEnv>()
         )
         .run();
       removeMemberCoffee(tx, club.id, target.userId);
+      tx.delete(schema.clubShare)
+        .where(
+          and(
+            eq(schema.clubShare.clubId, club.id),
+            eq(schema.clubShare.userId, target.userId),
+          ),
+        )
+        .run();
       tx.delete(schema.clubMember)
         .where(eq(schema.clubMember.id, target.id))
         .run();
@@ -616,6 +634,82 @@ export const clubRoutes = new Hono<AuthedEnv>()
       return c.json(toSeries(series));
     },
   )
+
+  // ---- Highlights ----
+  .get('/:id/highlights', (c) => {
+    const club = findClub(c, c.req.param('id'));
+    const m = club && me(c, club.id);
+    if (!club || !isActive(m)) return notFound(c);
+    const db = c.get('db');
+    const now = new Date();
+    // A year is plenty for streaks and milestones to be worth celebrating.
+    const since = new Date(now.getTime() - 400 * 86_400_000);
+    const attendances = db
+      .select({
+        userId: schema.rsvp.userId,
+        name: schema.user.name,
+        startsAt: schema.clubRun.startsAt,
+        weather: schema.clubRun.weather,
+      })
+      .from(schema.rsvp)
+      .innerJoin(schema.clubRun, eq(schema.clubRun.id, schema.rsvp.clubRunId))
+      .innerJoin(schema.user, eq(schema.user.id, schema.rsvp.userId))
+      .where(
+        and(
+          eq(schema.clubRun.clubId, club.id),
+          eq(schema.clubRun.status, 'scheduled'),
+          eq(schema.rsvp.status, 'going'),
+          gte(schema.clubRun.startsAt, since),
+          lt(schema.clubRun.startsAt, now),
+        ),
+      )
+      .all()
+      .map((a) => ({
+        ...a,
+        rainy:
+          a.weather !== null &&
+          ['drizzle', 'rain', 'storm'].includes(
+            describeWeather(a.weather.code).kind,
+          ),
+      }));
+    const shares = db
+      .select({
+        startedAt: schema.clubShare.startedAt,
+        distanceM: schema.clubShare.distanceM,
+      })
+      .from(schema.clubShare)
+      .where(
+        and(
+          eq(schema.clubShare.clubId, club.id),
+          gte(
+            schema.clubShare.startedAt,
+            new Date(now.getTime() - 40 * 86_400_000),
+          ),
+        ),
+      )
+      .all();
+    const opted = new Set(
+      db
+        .select({ userId: schema.clubMember.userId })
+        .from(schema.clubMember)
+        .where(
+          and(
+            eq(schema.clubMember.clubId, club.id),
+            eq(schema.clubMember.status, 'active'),
+            eq(schema.clubMember.highlights, true),
+          ),
+        )
+        .all()
+        .map((o) => o.userId),
+    );
+    const h = clubHighlights(attendances, shares, opted, club.timezone, now);
+    const result: ClubHighlights = {
+      ...h,
+      moments: h.moments.map((x) => ({ ...x, at: x.at.toISOString() })),
+      recentShares: listShares(db, { clubId: club.id, limit: 5 }),
+    };
+    return c.json(result);
+  })
 
   // ---- Runs ----
   .get('/:id/runs', (c) => {

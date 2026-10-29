@@ -15,6 +15,7 @@ import {
   type UpdateMenuItem,
   type UpdateSeries,
   type UsualInput,
+  clubHighlightsSchema,
   clubPreviewSchema,
   clubRunDetailSchema,
   clubRunSchema,
@@ -76,6 +77,13 @@ export function useOrderSummary(clubId: string, runId: string, enabled = true) {
   });
 }
 
+export function useClubHighlights(id: string) {
+  return useQuery({
+    queryKey: ['clubs', id, 'highlights'],
+    queryFn: () => api(`/clubs/${id}/highlights`, clubHighlightsSchema),
+  });
+}
+
 export function useClubPreview(code: string) {
   return useQuery({
     queryKey: ['clubs', 'preview', code],
@@ -119,6 +127,8 @@ export function clubApi(clubId: string) {
       api(`${base}/me`, clubSummarySchema, json('PATCH', { shareLevel })),
     setMuted: (muted: boolean) =>
       api(`${base}/me`, clubSummarySchema, json('PATCH', { muted })),
+    setHighlights: (highlights: boolean) =>
+      api(`${base}/me`, clubSummarySchema, json('PATCH', { highlights })),
     updateMember: ({ userId, ...body }: UpdateMember & { userId: string }) =>
       api(`${base}/members/${userId}`, clubSchema, json('PATCH', body)),
     removeMember: (userId: string) =>

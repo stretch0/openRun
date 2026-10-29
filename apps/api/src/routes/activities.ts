@@ -32,9 +32,40 @@ import {
   writeDataFile,
 } from '../activity-store.js';
 import { type AuthedEnv, requireUser } from '../context.js';
+import {
+  shareTargets,
+  shareWithClub,
+  withdrawShares,
+} from '../clubs/shares.js';
 import { getPrivacySettings, sharedStream } from '../privacy.js';
 
 type ActivityRow = typeof schema.activity.$inferSelect;
+
+function shareTargetsFor(c: Ctx, row: ActivityRow) {
+  const db = c.get('db');
+  const hasRoute = loadStream(db, row.id)?.lat.some((v) => v !== null) ?? false;
+  return shareTargets(
+    db,
+    row.userId,
+    row.id,
+    hasRoute && getPrivacySettings(db, row.userId).shareMap,
+  );
+}
+
+/** The route as clubs may see it: privacy zones cut out, about 300 points. */
+function sharedTrack(c: Ctx, row: ActivityRow) {
+  const db = c.get('db');
+  const stream = loadStream(db, row.id);
+  if (!stream || !getPrivacySettings(db, row.userId).shareMap) return null;
+  const shared = downsample(sharedStream(db, row.userId, stream), 300);
+  const track = shared.lat.map((lat, i) => {
+    const lng = shared.lng[i];
+    return lat !== null && lng !== null
+      ? ([lat, lng] as [number, number])
+      : null;
+  });
+  return track.some((p) => p !== null) ? track : null;
+}
 
 const MAX_FILES = 50;
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
@@ -205,14 +236,58 @@ export const activityRoutes = new Hono<AuthedEnv>()
     });
   })
   .patch('/visibility', zValidator('json', bulkVisibilitySchema), (c) => {
+    const { visibility } = c.req.valid('json');
+    const userId = c.get('user').id;
     const changed = c
       .get('db')
       .update(schema.activity)
-      .set({ visibility: c.req.valid('json').visibility })
-      .where(eq(schema.activity.userId, c.get('user').id))
+      .set({ visibility })
+      .where(eq(schema.activity.userId, userId))
       .returning({ id: schema.activity.id })
       .all();
+    // Private means private: take back everything shared with clubs.
+    if (visibility === 'private') withdrawShares(c.get('db'), userId);
     return c.json({ updated: changed.length });
+  })
+  .get('/:id/clubs', (c) => {
+    const row = findOwn(c, c.req.param('id'));
+    if (!row) return c.json({ error: 'Not found' }, 404);
+    return c.json(shareTargetsFor(c, row));
+  })
+  .put('/:id/clubs/:clubId', (c) => {
+    const row = findOwn(c, c.req.param('id'));
+    if (!row) return c.json({ error: 'Not found' }, 404);
+    const db = c.get('db');
+    const result = shareWithClub(
+      db,
+      c.req.param('clubId'),
+      row.userId,
+      {
+        sourceId: row.id,
+        name: row.name,
+        startedAt: row.startedAt,
+        distanceM: row.distanceM,
+        durationS: row.durationS,
+      },
+      () => sharedTrack(c, row),
+    );
+    if ('error' in result) return c.json(result, 400);
+    if (row.visibility === 'private') {
+      db.update(schema.activity)
+        .set({ visibility: 'clubs' })
+        .where(eq(schema.activity.id, row.id))
+        .run();
+    }
+    return c.json(shareTargetsFor(c, row));
+  })
+  .delete('/:id/clubs/:clubId', (c) => {
+    const row = findOwn(c, c.req.param('id'));
+    if (!row) return c.json({ error: 'Not found' }, 404);
+    withdrawShares(c.get('db'), row.userId, {
+      sourceIds: [row.id],
+      clubId: c.req.param('clubId'),
+    });
+    return c.json(shareTargetsFor(c, row));
   })
   .patch('/:id', zValidator('json', updateActivitySchema), (c) => {
     const existing = findOwn(c, c.req.param('id'));
@@ -229,6 +304,9 @@ export const activityRoutes = new Hono<AuthedEnv>()
         .where(eq(schema.activity.id, existing.id))
         .returning()
         .all();
+      if (row.visibility === 'private' && existing.visibility !== 'private') {
+        withdrawShares(db, row.userId, { sourceIds: [row.id] });
+      }
       if (row.sport !== existing.sport) {
         saveBestEfforts(tx, row, loadStream(tx, row.id));
       }

@@ -7,6 +7,7 @@ import {
   shareLevelSchema,
 } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
+import { ClubHighlights } from '../components/club-highlights';
 import { ClubRunCard } from '../components/club-run-card';
 import { CoffeePicker, describeOrder } from '../components/coffee';
 import { clubApi, useClub, useClubMutation, useClubRuns } from '../lib/clubs';
@@ -92,6 +93,7 @@ export function ClubPage() {
         ) : null}
       </section>
 
+      <ClubHighlights club={c} />
       {c.menu.some((i) => !i.hidden) && <UsualCard club={c} />}
       <ShareLevelCard club={c} />
       <MuteCard club={c} />

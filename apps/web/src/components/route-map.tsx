@@ -93,8 +93,12 @@ export default function RouteMap({
         },
       });
     });
+    // Keep the canvas matching its box, e.g. when a card finishes laying out.
+    const resize = new ResizeObserver(() => m.resize());
+    resize.observe(container.current);
     map.current = m;
     return () => {
+      resize.disconnect();
       m.remove();
       map.current = null;
     };

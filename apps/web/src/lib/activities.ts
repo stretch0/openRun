@@ -12,6 +12,7 @@ import {
   type CreateActivity,
   importResultSchema,
   personalBestSchema,
+  shareTargetSchema,
   type UpdateActivity,
 } from '@openrun/schemas';
 import { api } from './api';
@@ -116,5 +117,29 @@ export function useDeleteActivity() {
       queryClient.removeQueries({ queryKey: ['activities', id] });
       return queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
+  });
+}
+
+/** Clubs this run could be shared with, and where it already is. */
+export function useShareTargets(id: string) {
+  return useQuery({
+    queryKey: ['activities', id, 'clubs'],
+    queryFn: () => api(`/activities/${id}/clubs`, z.array(shareTargetSchema)),
+  });
+}
+
+export function useShareRun(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ clubId, share }: { clubId: string; share: boolean }) =>
+      api(`/activities/${id}/clubs/${clubId}`, z.array(shareTargetSchema), {
+        method: share ? 'PUT' : 'DELETE',
+      }),
+    // Sharing can change the run's visibility, and the clubs' pages.
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['activities'] }),
+        queryClient.invalidateQueries({ queryKey: ['clubs'] }),
+      ]),
   });
 }
