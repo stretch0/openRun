@@ -50,6 +50,8 @@ export default defineConfig(() => ({
       workbox: {
         // .mjs covers MapLibre's worker, so maps work offline too.
         globPatterns: ['**/*.{js,mjs,css,html}'],
+        // Shows Web Push notifications and opens the page they point to.
+        importScripts: ['push-handler.js'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [

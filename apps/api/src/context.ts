@@ -1,6 +1,7 @@
 import { createMiddleware } from 'hono/factory';
 import type { Db } from '@openrun/db';
 import type { Config } from './config.js';
+import type { Notifier } from './push.js';
 
 export type SessionUser = {
   id: string;
@@ -15,6 +16,7 @@ export type AppEnv = {
   Variables: {
     db: Db;
     config: Config;
+    notifier: Notifier;
     user: SessionUser | null;
   };
 };

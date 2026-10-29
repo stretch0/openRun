@@ -7,3 +7,4 @@ export * from './privacy.js';
 export * from './club.js';
 export * from './place.js';
 export * from './coffee.js';
+export * from './notifications.js';

@@ -94,6 +94,7 @@ export function ClubPage() {
 
       {c.menu.some((i) => !i.hidden) && <UsualCard club={c} />}
       <ShareLevelCard club={c} />
+      <MuteCard club={c} />
       <Members club={c} />
       <LeaveClub club={c} />
     </>
@@ -162,6 +163,7 @@ function UsualCard({ club }: { club: Club }) {
   const remove = useClubMutation(api.removeUsual);
   const [editing, setEditing] = useState(false);
   const usual = club.myUsual;
+  const [autoAdd, setAutoAdd] = useState<boolean>();
   const pickedFrom = (u: NonNullable<Club['myUsual']>) =>
     Object.fromEntries(u.choices.map((c) => [c.option, c.choice]));
 
@@ -178,7 +180,7 @@ function UsualCard({ club }: { club: Club }) {
           onCancel={() => setEditing(false)}
           onSubmit={(picked) =>
             set.mutate(
-              { ...picked, autoAdd: usual?.autoAdd ?? false },
+              { ...picked, autoAdd: autoAdd ?? usual?.autoAdd ?? false },
               { onSuccess: () => setEditing(false) },
             )
           }
@@ -190,15 +192,15 @@ function UsualCard({ club }: { club: Club }) {
             <input
               type="checkbox"
               className="size-4 accent-brand-600"
-              checked={set.variables?.autoAdd ?? usual.autoAdd}
-              disabled={set.isPending}
-              onChange={(e) =>
+              checked={autoAdd ?? usual.autoAdd}
+              onChange={(e) => {
+                setAutoAdd(e.target.checked);
                 set.mutate({
                   menuItemId: usual.menuItemId,
                   choices: pickedFrom(usual),
                   autoAdd: e.target.checked,
-                })
-              }
+                });
+              }}
             />
             Order it whenever I say I'm going
           </label>
@@ -233,6 +235,7 @@ function UsualCard({ club }: { club: Club }) {
 
 function ShareLevelCard({ club }: { club: Club }) {
   const set = useClubMutation(clubApi(club.id).setShareLevel);
+  const [level, setLevel] = useState(club.shareLevel);
   return (
     <section className="card space-y-2">
       <label className="font-semibold" htmlFor="shareLevel">
@@ -241,8 +244,11 @@ function ShareLevelCard({ club }: { club: Club }) {
       <select
         className="input"
         id="shareLevel"
-        value={set.variables ?? club.shareLevel}
-        onChange={(e) => set.mutate(e.target.value as ShareLevel)}
+        value={level}
+        onChange={(e) => {
+          setLevel(e.target.value as ShareLevel);
+          set.mutate(e.target.value as ShareLevel);
+        }}
       >
         {shareLevelSchema.options.map((level) => (
           <option key={level} value={level}>
@@ -250,9 +256,40 @@ function ShareLevelCard({ club }: { club: Club }) {
           </option>
         ))}
       </select>
-      <p className="text-sm text-stone-500">
-        {SHARE_LEVEL_HELP[set.variables ?? club.shareLevel]}
-      </p>
+      <p className="text-sm text-stone-500">{SHARE_LEVEL_HELP[level]}</p>
+    </section>
+  );
+}
+
+function MuteCard({ club }: { club: Club }) {
+  const set = useClubMutation(clubApi(club.id).setMuted);
+  const [muted, setMuted] = useState(club.muted);
+  return (
+    <section className="card">
+      <label className="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          className="mt-0.5 size-4 shrink-0 accent-brand-600"
+          checked={muted}
+          onChange={(e) => {
+            setMuted(e.target.checked);
+            set.mutate(e.target.checked);
+          }}
+        />
+        <span>
+          <span className="font-medium">
+            Mute notifications from {club.name}
+          </span>
+          <span className="block text-stone-500">
+            No reminders or updates from this club. Choose what you hear about
+            in{' '}
+            <Link to="/settings" className="text-brand-600">
+              Settings
+            </Link>
+            .
+          </span>
+        </span>
+      </label>
     </section>
   );
 }

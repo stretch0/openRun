@@ -120,6 +120,22 @@ test.describe('signed in', () => {
     await expect(page.getByText('PB')).toBeVisible();
   });
 
+  test('chooses which notifications to get', async ({ page }) => {
+    await page.goto('/settings');
+    const section = page.getByRole('region', { name: 'Notifications' });
+    await expect(section.getByLabel('Run reminders')).toHaveValue('auto');
+    await section.getByLabel('Run reminders').selectOption('1h');
+    await section.getByLabel(/Coffee orders closing soon/).uncheck();
+    await expect(
+      section.getByLabel(/Coffee orders closing soon/),
+    ).not.toBeChecked();
+    await page.reload();
+    await expect(section.getByLabel('Run reminders')).toHaveValue('1h');
+    await expect(
+      section.getByLabel(/Coffee orders closing soon/),
+    ).not.toBeChecked();
+  });
+
   test('tracks shoes, shows stats and exports', async ({ page }) => {
     await page.goto('/');
 
@@ -382,4 +398,9 @@ test('serves an installable PWA', async ({ page, request }) => {
     return Boolean(reg.active);
   });
   expect(registered).toBe(true);
+  // The service worker shows push notifications.
+  expect(await (await request.get('/sw.js')).text()).toContain(
+    'push-handler.js',
+  );
+  expect((await request.get('/push-handler.js')).ok()).toBe(true);
 });

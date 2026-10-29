@@ -35,7 +35,7 @@ See [docs/PRIVACY.md](docs/PRIVACY.md), phase 1.
 - ✅ RSVP (going / maybe / not going)
 - ✅ Café menu, coffee order with a saved "usual" (optionally ordered whenever you say you're going)
 - ✅ Order cutoff that locks orders and builds a summary any member can show the cashier on their phone (big text, works offline, keeps the screen on)
-- Weather forecast (Open-Meteo), Web Push reminders, cancellations
+- ✅ Weather forecast (Open-Meteo), Web Push reminders (evening before a morning run, otherwise 2 hours before), coffee nudges, cancellation and schedule-change notices, per-club mute
 - ✅ Built as its own module that never reads members' run logs; members choose a sharing level per club (attendance only, summaries, or full)
 - Check-ins (manual, or from a run the member shares)
 - Fun attendance highlights, never speed rankings: streaks, milestones and the club's combined distance, opt-in per member

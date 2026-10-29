@@ -112,6 +112,7 @@ export const clubSummarySchema = z.object({
   role: clubRoleSchema,
   status: memberStatusSchema,
   shareLevel: shareLevelSchema,
+  muted: z.boolean(),
   memberCount: z.number(),
   nextRun: nextRunSchema.nullable(),
 });
@@ -163,13 +164,23 @@ export const updateMemberSchema = z.object({
 export type UpdateMember = z.infer<typeof updateMemberSchema>;
 
 export const updateMyMembershipSchema = z.object({
-  shareLevel: shareLevelSchema,
+  shareLevel: shareLevelSchema.optional(),
+  /** No notifications from this club. */
+  muted: z.boolean().optional(),
 });
 
 export const myRsvpSchema = z.object({
   status: rsvpStatusSchema,
 });
 export type MyRsvp = z.infer<typeof myRsvpSchema>;
+
+/** The forecast for a run's start. See libs/domain/weather. */
+export const runWeatherSchema = z.object({
+  code: z.number(),
+  temperatureC: z.number(),
+  precipitationChance: z.number(),
+  windKmh: z.number(),
+});
 
 export const clubRunSchema = z.object({
   id: z.string(),
@@ -184,6 +195,7 @@ export const clubRunSchema = z.object({
   going: z.number(),
   maybe: z.number(),
   myRsvp: myRsvpSchema.nullable(),
+  weather: runWeatherSchema.nullable(),
 });
 export type ClubRun = z.infer<typeof clubRunSchema>;
 

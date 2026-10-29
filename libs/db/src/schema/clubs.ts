@@ -23,6 +23,13 @@ export const clubRunStatuses = ['scheduled', 'cancelled'] as const;
 /** Same shapes as MenuOption and OrderChoice in libs/domain/coffee. */
 type MenuOption = { name: string; choices: string[] };
 type OrderChoice = { option: string; choice: string };
+/** Same shape as RunWeather in libs/domain/weather. */
+type RunWeather = {
+  code: number;
+  temperatureC: number;
+  precipitationChance: number;
+  windKmh: number;
+};
 
 export const club = sqliteTable('club', {
   id: id(),
@@ -59,6 +66,8 @@ export const clubMember = sqliteTable(
     shareLevel: text('share_level', { enum: shareLevels })
       .notNull()
       .default('attendance'),
+    /** No notifications from this club. */
+    muted: integer('muted', { mode: 'boolean' }).notNull().default(false),
     ...timestamps,
   },
   (t) => [
@@ -134,6 +143,9 @@ export const clubRun = sqliteTable(
       .notNull()
       .default('scheduled'),
     cancelledReason: text('cancelled_reason'),
+    /** The forecast for the start, from Open-Meteo. Null if none yet. */
+    weather: text('weather', { mode: 'json' }).$type<RunWeather>(),
+    weatherUpdatedAt: timestamp('weather_updated_at'),
     ...timestamps,
   },
   (t) => [

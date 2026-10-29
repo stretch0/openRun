@@ -64,18 +64,29 @@ function seriesTimes(s: Series, timeZone: string, now: Date) {
   );
 }
 
+type RunRow = typeof schema.clubRun.$inferSelect;
+
 /**
  * After a series changes, brings its future runs in line: details are
  * copied over, runs no longer on the schedule are removed (with their
  * RSVPs), and new times are created. Runs at unchanged times keep their
- * RSVPs. Past runs are never touched.
+ * RSVPs. Past runs are never touched. `onRemove` sees each run before it
+ * goes, while its RSVPs still exist.
  */
-export function syncFutureRuns(tx: Tx, series: Series, now = new Date()) {
+export function syncFutureRuns(
+  tx: Tx,
+  series: Series,
+  onRemove: (run: RunRow) => void = () => undefined,
+  now = new Date(),
+) {
   const future = and(
     eq(schema.clubRun.seriesId, series.id),
     gt(schema.clubRun.startsAt, now),
   );
   if (series.endedAt) {
+    for (const run of tx.select().from(schema.clubRun).where(future).all()) {
+      if (run.status === 'scheduled') onRemove(run);
+    }
     tx.delete(schema.clubRun).where(future).run();
     return;
   }
@@ -90,6 +101,7 @@ export function syncFutureRuns(tx: Tx, series: Series, now = new Date()) {
   );
   for (const run of tx.select().from(schema.clubRun).where(future).all()) {
     if (!wanted.has(run.startsAt.getTime())) {
+      if (run.status === 'scheduled') onRemove(run);
       tx.delete(schema.clubRun).where(eq(schema.clubRun.id, run.id)).run();
     }
   }
