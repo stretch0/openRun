@@ -6,16 +6,26 @@ import { type Db, createDb, runMigrations } from '@openrun/db';
 import { createApp } from './app.js';
 import { createAuth } from './auth.js';
 import { type Config, loadConfig } from './config.js';
+import { type Notification, Notifier, type PushSender } from './push.js';
 
 const migrationsDir = fileURLToPath(
   new URL('../../../libs/db-migrations/migrations', import.meta.url),
 );
 
-/** An app on an in-memory database, with files in a fresh temporary DATA_DIR. */
+/** A notification as a push service would have received it. */
+export type SentPush = Notification & { endpoint: string };
+
+/**
+ * An app on an in-memory database, with files in a fresh temporary DATA_DIR.
+ * Push notifications are recorded in `sent`; endpoints containing "gone"
+ * behave like an unsubscribed browser.
+ */
 export function setup(env: Record<string, string> = {}): {
   app: ReturnType<typeof createApp>;
   db: Db;
   config: Config;
+  notifier: Notifier;
+  sent: SentPush[];
 } {
   const config = loadConfig({
     DATABASE_URL: ':memory:',
@@ -26,8 +36,18 @@ export function setup(env: Record<string, string> = {}): {
   });
   const db = createDb(config.databasePath);
   runMigrations(db, config.migrationsDir);
-  const app = createApp({ db, auth: createAuth(db, config), config });
-  return { app, db, config };
+  const sent: SentPush[] = [];
+  const sender: PushSender = {
+    publicKey: 'test-public-key',
+    async send(target, payload) {
+      if (target.endpoint.includes('gone')) return 'gone';
+      sent.push({ endpoint: target.endpoint, ...JSON.parse(payload) });
+      return 'ok';
+    },
+  };
+  const notifier = new Notifier(db, sender);
+  const app = createApp({ db, auth: createAuth(db, config), config, notifier });
+  return { app, db, config, notifier, sent };
 }
 
 export type App = ReturnType<typeof setup>['app'];

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { meSchema, type UpdateMe } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
 import { InstallButton } from '../components/install-button';
+import { NotificationSettings } from '../components/notification-settings';
 import { PrivacySettings } from '../components/privacy-settings';
 import { ShoeSettings } from '../components/shoe-settings';
 import { api } from '../lib/api';
@@ -91,6 +92,8 @@ export function SettingsPage() {
           {updateMe.isSuccess ? 'Saved' : 'Save'}
         </button>
       </form>
+
+      <NotificationSettings />
 
       <PrivacySettings />
 

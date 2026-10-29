@@ -115,10 +115,12 @@
     "@hono/zod-validator": "*",
     "better-auth": "*",
     "better-sqlite3": "*",
+    "croner": "*",
     "drizzle-orm": "*",
     "fast-xml-parser": "*",
     "fit-file-parser": "*",
     "hono": "*",
+    "web-push": "*",
     "zod": "*"
   },
   "type": "module"

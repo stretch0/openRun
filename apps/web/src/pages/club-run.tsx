@@ -4,6 +4,7 @@ import type { Attendee, ClubRunDetail, RunCoffee } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
 import { RsvpButtons } from '../components/club-run-card';
 import { CoffeePicker, describeOrder } from '../components/coffee';
+import { WeatherDetail } from '../components/weather';
 import {
   clubApi,
   useClub,
@@ -55,7 +56,7 @@ export function ClubRunPage() {
         </section>
       )}
 
-      {(r.location || r.notes) && (
+      {(r.location || r.notes || (r.weather && !cancelled)) && (
         <section className="card space-y-1 text-sm">
           {r.location && (
             <p>
@@ -73,6 +74,7 @@ export function ClubRunPage() {
               </a>
             </p>
           )}
+          {r.weather && !cancelled && <WeatherDetail weather={r.weather} />}
           {r.notes && <p className="whitespace-pre-wrap">{r.notes}</p>}
         </section>
       )}

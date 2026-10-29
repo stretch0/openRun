@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { ClubRun, RsvpStatus } from '@openrun/schemas';
 import { clubApi, useClubMutation } from '../lib/clubs';
 import { formatRunTime } from '../lib/format';
+import { WeatherBrief } from './weather';
 
 export const RSVP_LABELS: Record<RsvpStatus, string> = {
   going: 'Going',
@@ -59,16 +60,19 @@ export function ClubRunCard({
             {formatRunTime(run.startsAt, timeZone)}
           </span>
         </div>
-        <p className="text-sm text-stone-500">
-          {cancelled
-            ? `Cancelled${run.cancelledReason ? `: ${run.cancelledReason}` : ''}`
-            : [
-                run.location?.name,
-                `${run.going} going`,
-                run.maybe ? `${run.maybe} maybe` : null,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
+        <p className="flex flex-wrap items-center gap-x-3 text-sm text-stone-500">
+          <span>
+            {cancelled
+              ? `Cancelled${run.cancelledReason ? `: ${run.cancelledReason}` : ''}`
+              : [
+                  run.location?.name,
+                  `${run.going} going`,
+                  run.maybe ? `${run.maybe} maybe` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+          </span>
+          {!cancelled && run.weather && <WeatherBrief weather={run.weather} />}
         </p>
       </Link>
       {!cancelled && <RsvpButtons run={run} />}

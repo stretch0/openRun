@@ -117,6 +117,8 @@ export function clubApi(clubId: string) {
     newCode: () => api(`${base}/join-code`, clubSchema, json('POST')),
     setShareLevel: (shareLevel: ShareLevel) =>
       api(`${base}/me`, clubSummarySchema, json('PATCH', { shareLevel })),
+    setMuted: (muted: boolean) =>
+      api(`${base}/me`, clubSummarySchema, json('PATCH', { muted })),
     updateMember: ({ userId, ...body }: UpdateMember & { userId: string }) =>
       api(`${base}/members/${userId}`, clubSchema, json('PATCH', body)),
     removeMember: (userId: string) =>

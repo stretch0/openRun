@@ -51,6 +51,7 @@ import {
   me,
   notFound,
 } from './helpers.js';
+import { noticeJoinRequest, noticeRunChange } from './notices.js';
 import { ensureUpcomingRuns, syncFutureRuns } from './runs.js';
 
 type ClubRow = typeof schema.club.$inferSelect;
@@ -104,6 +105,7 @@ function toSummary(c: Ctx, club: ClubRow, m: Membership): ClubSummary {
     role: m.role,
     status: m.status,
     shareLevel: m.shareLevel,
+    muted: m.muted,
     memberCount: memberCount(c, club.id),
     nextRun: isActive(m) ? nextRun(c, club.id) : null,
   };
@@ -217,6 +219,7 @@ function toRuns(c: Ctx, runs: RunRow[]): ClubRun[] {
       going: tally('going'),
       maybe: tally('maybe'),
       myRsvp: mine ? { status: mine.status } : null,
+      weather: run.weather ?? null,
     };
   });
 }
@@ -351,6 +354,9 @@ export const clubRoutes = new Hono<AuthedEnv>()
       })
       .returning()
       .all();
+    if (m.status === 'pending') {
+      noticeJoinRequest(db, c.get('notifier'), club, c.get('user').name);
+    }
     return c.json(toSummary(c, club, m), 201);
   })
   .get('/:id', (c) => {
@@ -595,7 +601,16 @@ export const clubRoutes = new Hono<AuthedEnv>()
           .where(eq(schema.clubRunSeries.id, existing.id))
           .returning()
           .all();
-        syncFutureRuns(tx, row);
+        syncFutureRuns(tx, row, (removed) =>
+          noticeRunChange(
+            db,
+            c.get('notifier'),
+            club,
+            removed,
+            { kind: 'removed', seriesEnded: row.endedAt !== null },
+            m.userId,
+          ),
+        );
         return row;
       });
       return c.json(toSeries(series));
@@ -694,6 +709,30 @@ export const clubRoutes = new Hono<AuthedEnv>()
       .where(eq(schema.clubRun.id, run.id))
       .returning()
       .all();
+    const notifier = c.get('notifier');
+    const db = c.get('db');
+    if (run.status === 'scheduled' && updated.status === 'cancelled') {
+      noticeRunChange(
+        db,
+        notifier,
+        club,
+        updated,
+        { kind: 'cancelled', reason: updated.cancelledReason },
+        m.userId,
+      );
+    } else if (
+      updated.status === 'scheduled' &&
+      updated.startsAt.getTime() !== run.startsAt.getTime()
+    ) {
+      noticeRunChange(
+        db,
+        notifier,
+        club,
+        updated,
+        { kind: 'moved', from: run.startsAt },
+        m.userId,
+      );
+    }
     return c.json(toRunDetail(c, club, updated, m));
   })
   .put('/:id/runs/:runId/rsvp', zValidator('json', rsvpInputSchema), (c) => {

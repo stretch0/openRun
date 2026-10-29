@@ -137,8 +137,7 @@ Schema change workflow:
 1. Check out `main`, run `npm install`, then `npx nx run-many -t lint typecheck test build check` and the e2e tests.
 2. ~~Build and run the Docker image normally.~~ Done on 2026-10-28: it builds and boots cleanly without the sandbox workarounds, and imports work inside it.
 3. In a real browser, register, add a passkey, sign out and sign back in with it. Install the PWA. Create an invite and use it with `INVITE_ONLY=true`.
-4. Next: **M2 part 3**. Parts 1 (clubs, meeting points, repeating runs, RSVPs) and 2 (coffee) are done; see `docs/ARCHITECTURE.md` → Clubs. M2's remaining parts:
-   - **Part 3:** Open-Meteo weather, Web Push reminders (VAPID), cancellation notices, and an in-process scheduler (croner) that also creates runs ahead of time.
+4. Next: **M2 part 4**. Parts 1 (clubs, meeting points, repeating runs, RSVPs), 2 (coffee) and 3 (weather, notifications, scheduler) are done; see `docs/ARCHITECTURE.md` → Clubs and → Notifications. M2's remaining part:
    - **Part 4:** `club_share` snapshots (via `sharedStream`), check-ins, and attendance highlights: streaks, milestones, combined distance. Opt-in, never ranked by speed.
    - **Known gap:** an owner can't hand the club to someone else yet; they can only delete it.
 

@@ -48,6 +48,7 @@ export default defineConfig({
           WEB_DIR: 'apps/web/dist',
           // Tests stub place search in the browser; never reach a real geocoder.
           PLACE_SEARCH_URL: 'http://127.0.0.1:9/search',
+          WEATHER_URL: '',
         },
       },
   projects: [

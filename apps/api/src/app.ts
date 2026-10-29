@@ -8,12 +8,14 @@ import type { Db } from '@openrun/db';
 import type { Auth } from './auth.js';
 import type { Config } from './config.js';
 import type { AppEnv } from './context.js';
+import { Notifier } from './push.js';
 import { activityRoutes, personalBestRoutes } from './routes/activities.js';
 import { clubRoutes } from './clubs/routes.js';
 import { adminRoutes } from './routes/admin.js';
 import { exportRoutes } from './routes/export.js';
 import { instanceRoutes } from './routes/instance.js';
 import { meRoutes } from './routes/me.js';
+import { notificationRoutes } from './routes/notifications.js';
 import { placeRoutes } from './routes/places.js';
 import { privacyRoutes } from './routes/privacy.js';
 import { shoeRoutes } from './routes/shoes.js';
@@ -23,10 +25,13 @@ export function createApp({
   db,
   auth,
   config,
+  notifier = new Notifier(db, null),
 }: {
   db: Db;
   auth: Auth;
   config: Config;
+  /** Sends Web Push notifications; by default sends nothing. */
+  notifier?: Notifier;
 }) {
   const app = new Hono<AppEnv>();
 
@@ -37,6 +42,7 @@ export function createApp({
     c.set('user', session?.user ?? null);
     c.set('db', db);
     c.set('config', config);
+    c.set('notifier', notifier);
     await next();
   });
 
@@ -55,6 +61,7 @@ export function createApp({
   app.route('/api/privacy', privacyRoutes);
   app.route('/api/clubs', clubRoutes);
   app.route('/api/places', placeRoutes);
+  app.route('/api/notifications', notificationRoutes);
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));
 
   if (config.webDir) serveWeb(app, config.webDir);

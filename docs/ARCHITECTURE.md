@@ -78,6 +78,15 @@ The rules are in [PRIVACY.md](PRIVACY.md). How they're implemented:
 - Better Auth rate-limits by client IP. Unless `TRUST_PROXY` is set, the API overwrites `X-Forwarded-For` with the socket address so clients can't spoof it.
 - MCP clients (M4) will use hashed personal access tokens (`api_token` table) with read or write scope.
 
+## Notifications and the scheduler
+
+- `apps/api/src/scheduler.ts` runs jobs inside the server with `croner`: reminders and coffee nudges every minute, weather every 30 minutes (a run's forecast refreshes when it's over 3 hours old), and runs created eight weeks ahead nightly. Each job catches its own errors. It starts in `main.ts`, not `createApp`, so tests drive the job functions directly with a fixed `now`.
+- `apps/api/src/push.ts`: Web Push with VAPID keys from `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`, or generated once into `DATA_DIR/vapid.json`. `Notifier.notify(userIds, notification, key?)` sends to every subscribed device and deletes subscriptions the push service says are gone; with a `key` (e.g. `reminder:<run id>`) it claims a `notification_sent` row first, so each person gets it at most once even across restarts. Tests use a recording sender.
+- What gets sent, and to whom, lives in `apps/api/src/clubs/notices.ts`. Everything respects `notification_settings` (a missing row means the defaults) and `club_member.muted`. Reminder timing is `reminderTime()` in `libs/domain/src/reminders.ts`: by default the evening before (19:00 local) for runs starting before 10:00, otherwise two hours before. Someone who RSVPs after their reminder time isn't reminded.
+- Run changes notify people who said going or maybe, never whoever made the change: cancelling, moving, and series edits that remove a run (`syncFutureRuns` calls back before deleting, while RSVPs still exist).
+- The browser side is `apps/web/public/push-handler.js`, loaded into the Workbox service worker with `importScripts`. iOS only allows Web Push from a Home Screen app, and the Settings page says so.
+- Weather (`apps/api/src/clubs/weather.ts`) asks Open-Meteo for each meeting point once (positions rounded to about a kilometre), for runs in the next 14 days, and stores the hour nearest the start on `club_run.weather`.
+
 ## PWA
 
 - `vite-plugin-pwa` generates the manifest and a Workbox service worker.
