@@ -1,8 +1,16 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import type { Attendee, ClubRunDetail } from '@openrun/schemas';
+import type { Attendee, ClubRunDetail, RunCoffee } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
 import { RsvpButtons } from '../components/club-run-card';
-import { clubApi, useClubMutation, useClubRun } from '../lib/clubs';
+import { CoffeePicker, describeOrder } from '../components/coffee';
+import {
+  clubApi,
+  useClub,
+  useClubMutation,
+  useClubRun,
+  useOrderSummary,
+} from '../lib/clubs';
 import { ApiError } from '../lib/api';
 import { formatRunTime, mapLink } from '../lib/format';
 
@@ -70,6 +78,7 @@ export function ClubRunPage() {
       )}
 
       {!cancelled && <Rsvp run={r} />}
+      {r.coffee && <Coffee run={r} coffee={r.coffee} />}
       <Attendees run={r} />
       {r.canManage && <OrganiserActions run={r} />}
     </>
@@ -81,6 +90,135 @@ function Rsvp({ run }: { run: ClubRunDetail }) {
     <section className="card space-y-3">
       <h2 className="font-semibold">Are you coming?</h2>
       <RsvpButtons run={run} />
+    </section>
+  );
+}
+
+function Coffee({ run, coffee }: { run: ClubRunDetail; coffee: RunCoffee }) {
+  const { data: club } = useClub(run.clubId);
+  const api = clubApi(run.clubId);
+  const order = useClubMutation(api.order);
+  const remove = useClubMutation(api.removeOrder);
+  const [picking, setPicking] = useState(false);
+  // Fetch the order list now, so it's there to show at the café even with
+  // no signal.
+  useOrderSummary(run.clubId, run.id, coffee.orderCount > 0);
+
+  const going = run.myRsvp?.status === 'going';
+  const mine = coffee.myOrder;
+  const usual = club?.myUsual;
+  const usualOnMenu =
+    usual && club?.menu.some((i) => i.id === usual.menuItemId && !i.hidden);
+  const closes =
+    coffee.closesAt === run.startsAt
+      ? 'when the run starts'
+      : formatRunTime(coffee.closesAt, run.timezone);
+
+  return (
+    <section className="card space-y-3" aria-label="Coffee">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="font-semibold">Coffee after</h2>
+        {coffee.orderCount > 0 && (
+          <Link
+            to={`/clubs/${run.clubId}/runs/${run.id}/coffee`}
+            className="shrink-0 text-sm font-medium text-brand-600"
+          >
+            Order list ({coffee.orderCount})
+          </Link>
+        )}
+      </div>
+
+      {picking && club ? (
+        <CoffeePicker
+          menu={club.menu}
+          initial={mine ?? usual}
+          submitLabel="Order"
+          pending={order.isPending}
+          error={order.error?.message}
+          onCancel={() => setPicking(false)}
+          onSubmit={(picked, form) =>
+            order.mutate(
+              {
+                runId: run.id,
+                ...picked,
+                saveAsUsual: form.get('saveAsUsual') === 'on',
+              },
+              { onSuccess: () => setPicking(false) },
+            )
+          }
+        >
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="saveAsUsual"
+              defaultChecked={!usual}
+              className="size-4 accent-brand-600"
+            />
+            Make this my usual
+          </label>
+        </CoffeePicker>
+      ) : mine ? (
+        <>
+          <p>
+            <span className="text-stone-500">Your order: </span>
+            <span className="font-medium">{describeOrder(mine)}</span>
+          </p>
+          {coffee.open && (
+            <div className="flex gap-4 text-sm font-medium">
+              <button
+                className="text-brand-600"
+                onClick={() => setPicking(true)}
+              >
+                Change
+              </button>
+              <button
+                className="text-stone-500"
+                disabled={remove.isPending}
+                onClick={() => remove.mutate(run.id)}
+              >
+                No coffee
+              </button>
+            </div>
+          )}
+        </>
+      ) : !coffee.open ? (
+        <p className="text-sm text-stone-500">You didn't order.</p>
+      ) : going ? (
+        <div className="flex flex-wrap gap-2">
+          {usual && usualOnMenu && (
+            <button
+              className="btn-primary"
+              disabled={order.isPending}
+              onClick={() =>
+                order.mutate({
+                  runId: run.id,
+                  menuItemId: usual.menuItemId,
+                  choices: Object.fromEntries(
+                    usual.choices.map((c) => [c.option, c.choice]),
+                  ),
+                  saveAsUsual: false,
+                })
+              }
+            >
+              My usual: {describeOrder(usual)}
+            </button>
+          )}
+          <button className="btn-secondary" onClick={() => setPicking(true)}>
+            {usual && usualOnMenu ? 'Something else' : 'Order a coffee'}
+          </button>
+        </div>
+      ) : (
+        <p className="text-sm text-stone-500">
+          Say you're going to order a coffee for after.
+        </p>
+      )}
+      {!picking && <FormError message={order.error?.message} />}
+
+      <p className="text-xs text-stone-500">
+        {coffee.open
+          ? `Orders close ${closes}.`
+          : 'Orders have closed. The list is ready for the café.'}
+      </p>
     </section>
   );
 }

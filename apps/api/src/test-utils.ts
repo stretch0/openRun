@@ -56,3 +56,18 @@ export function json(res: Response) {
 export function get(app: App, path: string, cookie = '') {
   return app.request(path, { headers: { cookie } });
 }
+
+/** A JSON request from the web app's origin. */
+export function send(
+  app: App,
+  cookie: string,
+  method: string,
+  path: string,
+  body?: unknown,
+) {
+  return app.request(path, {
+    method,
+    headers: { 'content-type': 'application/json', cookie, origin },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}

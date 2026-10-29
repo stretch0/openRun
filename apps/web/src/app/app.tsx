@@ -8,6 +8,7 @@ import { AdminPage } from '../pages/admin';
 import { ClubPage } from '../pages/club';
 import { ClubManagePage } from '../pages/club-manage';
 import { ClubRunPage } from '../pages/club-run';
+import { ClubCoffeePage } from '../pages/club-coffee';
 import { ClubsPage, JoinClubPage } from '../pages/clubs';
 import { HomePage } from '../pages/home';
 import { LoginPage } from '../pages/login';
@@ -50,6 +51,10 @@ export function App() {
             <Route path="clubs/:id" element={<ClubPage />} />
             <Route path="clubs/:id/manage" element={<ClubManagePage />} />
             <Route path="clubs/:id/runs/:runId" element={<ClubRunPage />} />
+            <Route
+              path="clubs/:id/runs/:runId/coffee"
+              element={<ClubCoffeePage />}
+            />
             <Route path="settings" element={<SettingsPage />} />
             <Route element={<RequireUser admin />}>
               <Route path="admin" element={<AdminPage />} />

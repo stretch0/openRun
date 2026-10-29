@@ -126,10 +126,12 @@ describe('privacy', () => {
     );
     expect(zone).toMatchObject({ name: 'Home', lat: 51.5, radiusM: 300 });
     const shared = await stream('shared');
-    // The start is hidden; at least the drawn 300 m and at most 450 m is cut.
+    // The start is hidden: at least the drawn 300 m is cut. The randomised
+    // circle may shift its centre up to 90 m and grow to 450 m, so its far
+    // edge is at most 540 m from the drawn centre (plus one sample).
     const hiddenUntil = shared.lat.findIndex((v) => v !== null);
     expect(shared.d[hiddenUntil]).toBeGreaterThan(300);
-    expect(shared.d[hiddenUntil]).toBeLessThan(460);
+    expect(shared.d[hiddenUntil]).toBeLessThan(560);
     expect(shared.lat.at(-1)).not.toBeNull();
     // The owner still sees everything.
     expect((await stream('owner')).lat[0]).not.toBeNull();

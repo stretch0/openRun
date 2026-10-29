@@ -238,7 +238,10 @@ test.describe('privacy', () => {
 test.describe('clubs', () => {
   test.use({ storageState: authFile });
 
-  test('runs a club from invite to RSVP', async ({ page, browser }) => {
+  test('runs a club from invite to RSVP and coffee', async ({
+    page,
+    browser,
+  }) => {
     await page.goto('/clubs');
     await page.getByRole('button', { name: 'Start a club' }).click();
     await page.getByLabel('Name').fill('Parkside Runners');
@@ -281,6 +284,15 @@ test.describe('clubs', () => {
     await expect(
       page.getByRole('listitem').filter({ hasText: 'Victoria Park' }),
     ).toBeVisible();
+
+    // A café menu, for coffee after the run.
+    await page.getByRole('button', { name: 'Add to the menu' }).click();
+    await page.locator('#itemName').fill('Flat white');
+    await page
+      .getByLabel('Choices')
+      .fill('Milk: Whole, Oat\nSize: Regular, Large');
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await expect(page.getByText('Milk: Whole, Oat')).toBeVisible();
 
     await page.getByRole('link', { name: '← Parkside Runners' }).click();
     const code = (
@@ -328,6 +340,32 @@ test.describe('clubs', () => {
       attendees.getByText('Ada Runner', { exact: true }),
     ).toBeVisible();
     await expect(page.getByText('Bea', { exact: true })).toBeVisible();
+
+    // Coffee for tomorrow's run (today's may have closed already).
+    await page.getByRole('link', { name: '← Parkside Runners' }).click();
+    const nextRun = page.getByRole('article').nth(1);
+    await nextRun.getByRole('button', { name: 'Going' }).click();
+    await expect(nextRun.getByText('1 going')).toBeVisible();
+    await nextRun.getByRole('link').first().click();
+    const coffee = page.getByRole('region', { name: 'Coffee' });
+    await coffee.getByRole('button', { name: 'Order a coffee' }).click();
+    await coffee.getByLabel('Milk').selectOption('Oat');
+    await coffee.getByRole('button', { name: 'Order', exact: true }).click();
+    await expect(coffee.getByText('Flat white · Oat')).toBeVisible();
+
+    // Anyone in the club can show the order list at the counter.
+    await coffee.getByRole('link', { name: 'Order list (1)' }).click();
+    const order = page.getByRole('region', { name: 'What to order' });
+    await expect(order.getByText('1 × Flat white')).toBeVisible();
+    await expect(order.getByText('1 × Oat')).toBeVisible();
+
+    // It was saved as Ada's usual.
+    await page.goto(runUrl.replace(/\/runs\/.*/, ''));
+    await expect(
+      page
+        .getByRole('region', { name: 'Your usual' })
+        .getByText('Flat white · Oat'),
+    ).toBeVisible();
   });
 });
 
