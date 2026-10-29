@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { editSchema } from './patch.js';
 import { visibilitySchema } from './privacy.js';
 
 export const sportSchema = z.enum([
@@ -114,16 +115,16 @@ export const createActivitySchema = z.object({
 });
 export type CreateActivity = z.infer<typeof createActivitySchema>;
 
-export const updateActivitySchema = createActivitySchema
-  .pick({
+export const updateActivitySchema = editSchema(
+  createActivitySchema.pick({
     name: true,
     sport: true,
     rpe: true,
     notes: true,
     shoeId: true,
     visibility: true,
-  })
-  .partial();
+  }),
+);
 export type UpdateActivity = z.infer<typeof updateActivitySchema>;
 
 export const importResultSchema = z.object({

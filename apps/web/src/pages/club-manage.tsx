@@ -1,7 +1,12 @@
 import { type FormEvent, Suspense, lazy, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { WEEKDAYS, zonedTime } from '@openrun/domain';
-import type { Club, Member, Place } from '@openrun/schemas';
+import {
+  WEEKDAYS,
+  formatMenuOptions,
+  parseMenuOptions,
+  zonedTime,
+} from '@openrun/domain';
+import type { Club, MenuItem, Member, Place } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
 import { clubApi, useClub, useClubMutation } from '../lib/clubs';
 import { usePlaceSearch } from '../lib/places';
@@ -44,6 +49,7 @@ export function ClubManagePage() {
       <Requests club={club} />
       <RepeatingRuns club={club} />
       <OneOffRun club={club} />
+      <CafeMenu club={club} />
       <MeetingPoints club={club} />
       <MemberRoles club={club} />
       <Details club={club} />
@@ -104,6 +110,7 @@ function RepeatingRuns({ club }: { club: Club }) {
         startTime: String(form.get('startTime')),
         locationId: String(form.get('seriesLocation') ?? '') || null,
         notes: String(form.get('seriesNotes') ?? '') || null,
+        orderCutoffMin: Number(form.get('seriesCutoff') ?? 0),
       },
       { onSuccess: () => setAdding(false) },
     );
@@ -134,6 +141,27 @@ function RepeatingRuns({ club }: { club: Club }) {
                     .filter(Boolean)
                     .join(' · ')}
                 </p>
+                {hasMenu(club) && !s.ended && (
+                  <label className="mt-1 flex items-center gap-2 text-stone-500">
+                    Coffee orders close
+                    <select
+                      className="rounded-md bg-transparent text-sm text-stone-900 dark:text-stone-100"
+                      value={s.orderCutoffMin}
+                      onChange={(e) =>
+                        update.mutate({
+                          id: s.id,
+                          orderCutoffMin: Number(e.target.value),
+                        })
+                      }
+                    >
+                      {CUTOFFS.map(([value, text]) => (
+                        <option key={value} value={value}>
+                          {text.toLowerCase()}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
               </div>
               <button
                 className={
@@ -233,6 +261,7 @@ function RepeatingRuns({ club }: { club: Club }) {
             </div>
           </div>
           <LocationSelect club={club} name="seriesLocation" />
+          <CutoffSelect club={club} name="seriesCutoff" />
           <div>
             <label className="label" htmlFor="seriesNotes">
               Notes
@@ -287,6 +316,7 @@ function OneOffRun({ club }: { club: Club }) {
         startsAt: zonedTime(day, time, club.timezone).toISOString(),
         locationId: String(form.get('runLocation') ?? '') || null,
         notes: String(form.get('runNotes') ?? '') || null,
+        orderCutoffMin: Number(form.get('runCutoff') ?? 0),
       },
       { onSuccess: (run) => navigate(`/clubs/${club.id}/runs/${run.id}`) },
     );
@@ -320,6 +350,7 @@ function OneOffRun({ club }: { club: Club }) {
         />
       </div>
       <LocationSelect club={club} name="runLocation" />
+      <CutoffSelect club={club} name="runCutoff" />
       <div>
         <label className="label" htmlFor="runNotes">
           Notes
@@ -336,6 +367,178 @@ function OneOffRun({ club }: { club: Club }) {
           className="btn-secondary"
           onClick={() => setOpen(false)}
         >
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
+const hasMenu = (club: Club) => club.menu.some((i) => !i.hidden);
+
+/** Minutes before the start that coffee orders lock. */
+const CUTOFFS: [number, string][] = [
+  [0, 'When the run starts'],
+  [15, '15 minutes before'],
+  [30, '30 minutes before'],
+  [60, 'An hour before'],
+  [120, 'Two hours before'],
+];
+
+function CutoffSelect({ club, name }: { club: Club; name: string }) {
+  if (!hasMenu(club)) return null;
+  return (
+    <div>
+      <label className="label" htmlFor={name}>
+        Coffee orders close
+      </label>
+      <select className="input" id={name} name={name} defaultValue={0}>
+        {CUTOFFS.map(([value, text]) => (
+          <option key={value} value={value}>
+            {text}
+          </option>
+        ))}
+      </select>
+      <p className="mt-1 text-xs text-stone-500">
+        After this the order list stops changing, ready to show at the café.
+      </p>
+    </div>
+  );
+}
+
+function CafeMenu({ club }: { club: Club }) {
+  const [editing, setEditing] = useState<MenuItem | 'new' | null>(null);
+  const update = useClubMutation(clubApi(club.id).updateMenuItem);
+  return (
+    <section className="card space-y-3">
+      <h2 className="font-semibold">Café menu</h2>
+      <p className="text-sm text-stone-500">
+        What people can order for after the run. Members pick from this when
+        they say they're going, and anyone in the club can show the order list
+        at the counter.
+      </p>
+      {club.menu.length > 0 && (
+        <ul className="divide-y divide-stone-200 text-sm dark:divide-stone-800">
+          {club.menu.map((item) =>
+            editing !== 'new' && editing?.id === item.id ? (
+              <li key={item.id} className="py-2">
+                <MenuItemForm
+                  club={club}
+                  item={item}
+                  onDone={() => setEditing(null)}
+                />
+              </li>
+            ) : (
+              <li key={item.id} className="flex items-start gap-3 py-2">
+                <div
+                  className={`flex-1 ${item.hidden ? 'text-stone-500' : ''}`}
+                >
+                  <p className="font-medium">
+                    {item.name}
+                    {item.hidden && ' (hidden)'}
+                  </p>
+                  {item.options.map((o) => (
+                    <p key={o.name} className="text-stone-500">
+                      {o.name}: {o.choices.join(', ')}
+                    </p>
+                  ))}
+                </div>
+                <button
+                  className="font-medium text-brand-600"
+                  onClick={() => setEditing(item)}
+                >
+                  Edit
+                </button>
+                <button
+                  className={
+                    item.hidden
+                      ? 'font-medium text-brand-600'
+                      : 'text-stone-500'
+                  }
+                  onClick={() =>
+                    update.mutate({ id: item.id, hidden: !item.hidden })
+                  }
+                >
+                  {item.hidden ? 'Show' : 'Hide'}
+                </button>
+              </li>
+            ),
+          )}
+        </ul>
+      )}
+      {editing === 'new' ? (
+        <MenuItemForm club={club} onDone={() => setEditing(null)} />
+      ) : (
+        <button
+          className="btn-secondary w-full"
+          onClick={() => setEditing('new')}
+        >
+          Add to the menu
+        </button>
+      )}
+    </section>
+  );
+}
+
+function MenuItemForm({
+  club,
+  item,
+  onDone,
+}: {
+  club: Club;
+  item?: MenuItem;
+  onDone: () => void;
+}) {
+  const add = useClubMutation(clubApi(club.id).addMenuItem);
+  const update = useClubMutation(clubApi(club.id).updateMenuItem);
+  const save = item ? update : add;
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const body = {
+      name: String(form.get('itemName')),
+      options: parseMenuOptions(String(form.get('itemOptions') ?? '')),
+    };
+    if (item) update.mutate({ id: item.id, ...body }, { onSuccess: onDone });
+    else add.mutate(body, { onSuccess: onDone });
+  };
+  return (
+    <form onSubmit={onSubmit} className="space-y-3">
+      <div>
+        <label className="label" htmlFor="itemName">
+          Name
+        </label>
+        <input
+          className="input"
+          id="itemName"
+          name="itemName"
+          defaultValue={item?.name}
+          placeholder="Flat white"
+          required
+        />
+      </div>
+      <div>
+        <label className="label" htmlFor="itemOptions">
+          Choices
+        </label>
+        <textarea
+          className="input font-mono text-sm"
+          id="itemOptions"
+          name="itemOptions"
+          rows={3}
+          defaultValue={item ? formatMenuOptions(item.options) : ''}
+          placeholder={'Milk: Whole, Oat, Soy\nSize: Regular, Large'}
+        />
+        <p className="mt-1 text-xs text-stone-500">
+          Optional. One per line: what to choose, a colon, then the options.
+        </p>
+      </div>
+      <FormError message={save.error?.message} />
+      <div className="flex gap-2">
+        <button className="btn-primary" disabled={save.isPending}>
+          {item ? 'Save' : 'Add'}
+        </button>
+        <button type="button" className="btn-secondary" onClick={onDone}>
           Cancel
         </button>
       </div>

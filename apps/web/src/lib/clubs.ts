@@ -4,20 +4,28 @@ import {
   type CreateClub,
   type CreateClubRun,
   type CreateLocation,
+  type CreateMenuItem,
   type CreateSeries,
+  type OrderInput,
   type RsvpInput,
   type ShareLevel,
   type UpdateClub,
   type UpdateClubRun,
   type UpdateMember,
+  type UpdateMenuItem,
   type UpdateSeries,
+  type UsualInput,
   clubPreviewSchema,
   clubRunDetailSchema,
   clubRunSchema,
   clubSchema,
   clubSummarySchema,
   locationSchema,
+  menuItemSchema,
+  orderSummarySchema,
+  runCoffeeSchema,
   seriesSchema,
+  usualSchema,
 } from '@openrun/schemas';
 import { api } from './api';
 
@@ -55,6 +63,16 @@ export function useClubRun(clubId: string, runId: string) {
   return useQuery({
     queryKey: ['clubs', clubId, 'run', runId],
     queryFn: () => api(`/clubs/${clubId}/runs/${runId}`, clubRunDetailSchema),
+  });
+}
+
+/** The cashier view. Kept for offline use: the service worker caches it too. */
+export function useOrderSummary(clubId: string, runId: string, enabled = true) {
+  return useQuery({
+    queryKey: ['clubs', clubId, 'run', runId, 'orders'],
+    queryFn: () =>
+      api(`/clubs/${clubId}/runs/${runId}/orders`, orderSummarySchema),
+    enabled,
   });
 }
 
@@ -117,6 +135,17 @@ export function clubApi(clubId: string) {
       api(`${base}/runs/${id}`, clubRunDetailSchema, json('PATCH', body)),
     rsvp: ({ runId, ...body }: RsvpInput & { runId: string }) =>
       api(`${base}/runs/${runId}/rsvp`, clubRunDetailSchema, json('PUT', body)),
+    addMenuItem: (body: CreateMenuItem) =>
+      api(`${base}/menu`, menuItemSchema, json('POST', body)),
+    updateMenuItem: ({ id, ...body }: UpdateMenuItem & { id: string }) =>
+      api(`${base}/menu/${id}`, menuItemSchema, json('PATCH', body)),
+    order: ({ runId, ...body }: OrderInput & { runId: string }) =>
+      api(`${base}/runs/${runId}/order`, runCoffeeSchema, json('PUT', body)),
+    removeOrder: (runId: string) =>
+      api(`${base}/runs/${runId}/order`, runCoffeeSchema, json('DELETE')),
+    setUsual: (body: UsualInput) =>
+      api(`${base}/usual`, usualSchema, json('PUT', body)),
+    removeUsual: () => api(`${base}/usual`, z.undefined(), json('DELETE')),
   };
 }
 

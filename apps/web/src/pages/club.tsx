@@ -8,6 +8,7 @@ import {
 } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
 import { ClubRunCard } from '../components/club-run-card';
+import { CoffeePicker, describeOrder } from '../components/coffee';
 import { clubApi, useClub, useClubMutation, useClubRuns } from '../lib/clubs';
 import { ApiError } from '../lib/api';
 
@@ -91,6 +92,7 @@ export function ClubPage() {
         ) : null}
       </section>
 
+      {c.menu.some((i) => !i.hidden) && <UsualCard club={c} />}
       <ShareLevelCard club={c} />
       <Members club={c} />
       <LeaveClub club={c} />
@@ -149,6 +151,82 @@ function InviteCard({ club }: { club: Club }) {
           {copied ? 'Copied' : 'Copy link'}
         </button>
       </div>
+    </section>
+  );
+}
+
+/** A saved order, optionally added whenever you say you're going. */
+function UsualCard({ club }: { club: Club }) {
+  const api = clubApi(club.id);
+  const set = useClubMutation(api.setUsual);
+  const remove = useClubMutation(api.removeUsual);
+  const [editing, setEditing] = useState(false);
+  const usual = club.myUsual;
+  const pickedFrom = (u: NonNullable<Club['myUsual']>) =>
+    Object.fromEntries(u.choices.map((c) => [c.option, c.choice]));
+
+  return (
+    <section className="card space-y-2" aria-label="Your usual">
+      <h2 className="font-semibold">Your usual coffee</h2>
+      {editing ? (
+        <CoffeePicker
+          menu={club.menu}
+          initial={usual}
+          submitLabel="Save"
+          pending={set.isPending}
+          error={set.error?.message}
+          onCancel={() => setEditing(false)}
+          onSubmit={(picked) =>
+            set.mutate(
+              { ...picked, autoAdd: usual?.autoAdd ?? false },
+              { onSuccess: () => setEditing(false) },
+            )
+          }
+        />
+      ) : usual ? (
+        <>
+          <p className="font-medium">{describeOrder(usual)}</p>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="size-4 accent-brand-600"
+              checked={set.variables?.autoAdd ?? usual.autoAdd}
+              disabled={set.isPending}
+              onChange={(e) =>
+                set.mutate({
+                  menuItemId: usual.menuItemId,
+                  choices: pickedFrom(usual),
+                  autoAdd: e.target.checked,
+                })
+              }
+            />
+            Order it whenever I say I'm going
+          </label>
+          <div className="flex gap-4 text-sm font-medium">
+            <button className="text-brand-600" onClick={() => setEditing(true)}>
+              Change
+            </button>
+            <button
+              className="text-stone-500"
+              disabled={remove.isPending}
+              onClick={() => remove.mutate(undefined)}
+            >
+              Forget it
+            </button>
+          </div>
+          <FormError message={set.error?.message} />
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-stone-500">
+            Save what you usually have, then order it in one tap, or have it
+            ordered whenever you say you're going.
+          </p>
+          <button className="btn-secondary" onClick={() => setEditing(true)}>
+            Choose your usual
+          </button>
+        </>
+      )}
     </section>
   );
 }

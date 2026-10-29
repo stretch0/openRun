@@ -46,6 +46,7 @@ export function ensureUpcomingRuns(
           startsAt,
           locationId: s.locationId,
           notes: s.notes,
+          orderCutoffMin: s.orderCutoffMin,
         })),
       )
       .onConflictDoNothing()
@@ -97,6 +98,7 @@ export function syncFutureRuns(tx: Tx, series: Series, now = new Date()) {
       title: series.title,
       locationId: series.locationId,
       notes: series.notes,
+      orderCutoffMin: series.orderCutoffMin,
     })
     .where(future)
     .run();

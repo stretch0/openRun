@@ -1,6 +1,6 @@
 import { zValidator } from '@hono/zod-validator';
 import { and, asc, count, eq, gte, inArray, lt, ne, sql } from 'drizzle-orm';
-import { type Context, Hono } from 'hono';
+import { Hono } from 'hono';
 import { schema } from '@openrun/db';
 import { describeRule, formatRule, parseRule } from '@openrun/domain';
 import {
@@ -34,30 +34,30 @@ import {
   newJoinCode,
   outranks,
 } from './access.js';
+import {
+  addUsualIfWanted,
+  coffeeRoutes,
+  getUsual,
+  listMenu,
+  removeMemberCoffee,
+  removeOrder,
+  runCoffee,
+} from './coffee.js';
+import {
+  type Ctx,
+  findClub,
+  findRun,
+  forbidden,
+  me,
+  notFound,
+} from './helpers.js';
 import { ensureUpcomingRuns, syncFutureRuns } from './runs.js';
 
-type Ctx = Context<AuthedEnv>;
 type ClubRow = typeof schema.club.$inferSelect;
 type RunRow = typeof schema.clubRun.$inferSelect;
 
 /** Runs that started up to this long ago still show as upcoming. */
 const STILL_ON_MS = 3 * 60 * 60 * 1000;
-
-const notFound = (c: Ctx) => c.json({ error: 'Not found' }, 404);
-const forbidden = (c: Ctx) => c.json({ error: 'Organisers only' }, 403);
-
-function findClub(c: Ctx, id: string) {
-  return c
-    .get('db')
-    .select()
-    .from(schema.club)
-    .where(eq(schema.club.id, id))
-    .get();
-}
-
-function me(c: Ctx, clubId: string) {
-  return getMembership(c.get('db'), clubId, c.get('user').id);
-}
 
 function memberCount(c: Ctx, clubId: string) {
   return (
@@ -125,6 +125,7 @@ function toSeries(s: typeof schema.clubRunSeries.$inferSelect): Series {
     startTime: s.startTime,
     locationId: s.locationId,
     notes: s.notes,
+    orderCutoffMin: s.orderCutoffMin,
     ended: s.endedAt !== null,
   };
 }
@@ -168,6 +169,8 @@ function toClub(c: Ctx, club: ClubRow, m: Membership): Club {
       .all()
       .map(toSeries),
     members,
+    menu: listMenu(db, club.id, manage),
+    myUsual: getUsual(db, club.id, m.userId),
   };
 }
 
@@ -218,15 +221,6 @@ function toRuns(c: Ctx, runs: RunRow[]): ClubRun[] {
   });
 }
 
-function findRun(c: Ctx, clubId: string, runId: string) {
-  return c
-    .get('db')
-    .select()
-    .from(schema.clubRun)
-    .where(and(eq(schema.clubRun.id, runId), eq(schema.clubRun.clubId, clubId)))
-    .get();
-}
-
 function toRunDetail(
   c: Ctx,
   club: ClubRow,
@@ -257,6 +251,7 @@ function toRunDetail(
     timezone: club.timezone,
     canManage: canManage(m),
     attendees,
+    coffee: runCoffee(c.get('db'), run, m.userId),
   };
 }
 
@@ -470,8 +465,8 @@ export const clubRoutes = new Hono<AuthedEnv>()
     ) {
       return forbidden(c);
     }
-    // Someone who leaves takes their RSVPs with them, so their name doesn't
-    // stay on the club's runs.
+    // Someone who leaves takes their RSVPs and coffee orders with them, so
+    // their name doesn't stay on the club's runs.
     c.get('db').transaction((tx) => {
       const runIds = tx
         .select({ id: schema.clubRun.id })
@@ -485,6 +480,7 @@ export const clubRoutes = new Hono<AuthedEnv>()
           ),
         )
         .run();
+      removeMemberCoffee(tx, club.id, target.userId);
       tx.delete(schema.clubMember)
         .where(eq(schema.clubMember.id, target.id))
         .run();
@@ -710,13 +706,18 @@ export const clubRoutes = new Hono<AuthedEnv>()
       return c.json({ error: 'This run has been cancelled' }, 400);
     }
     const values = { status: c.req.valid('json').status };
-    c.get('db')
-      .insert(schema.rsvp)
-      .values({ ...values, clubRunId: run.id, userId: m.userId })
-      .onConflictDoUpdate({
-        target: [schema.rsvp.clubRunId, schema.rsvp.userId],
-        set: values,
-      })
-      .run();
+    c.get('db').transaction((tx) => {
+      tx.insert(schema.rsvp)
+        .values({ ...values, clubRunId: run.id, userId: m.userId })
+        .onConflictDoUpdate({
+          target: [schema.rsvp.clubRunId, schema.rsvp.userId],
+          set: values,
+        })
+        .run();
+      // Coffee is only for people who are coming.
+      if (values.status === 'going') addUsualIfWanted(tx, run, m.userId);
+      else removeOrder(tx, run.id, m.userId);
+    });
     return c.json(toRunDetail(c, club, run, m));
-  });
+  })
+  .route('/', coffeeRoutes);

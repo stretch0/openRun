@@ -137,8 +137,7 @@ Schema change workflow:
 1. Check out `main`, run `npm install`, then `npx nx run-many -t lint typecheck test build check` and the e2e tests.
 2. ~~Build and run the Docker image normally.~~ Done on 2026-10-28: it builds and boots cleanly without the sandbox workarounds, and imports work inside it.
 3. In a real browser, register, add a passkey, sign out and sign back in with it. Install the PWA. Create an invite and use it with `INVITE_ONLY=true`.
-4. Next: **M2 part 2 (coffee)**. Part 1 (clubs, meeting points, repeating runs, RSVPs) is done; see `docs/ARCHITECTURE.md` → Clubs. M2's remaining parts:
-   - **Part 2, coffee:** café menu with options, an order on the RSVP, a saved "usual", an order cutoff, and a big-text summary any member can show the cashier on their phone (should work offline).
+4. Next: **M2 part 3**. Parts 1 (clubs, meeting points, repeating runs, RSVPs) and 2 (coffee) are done; see `docs/ARCHITECTURE.md` → Clubs. M2's remaining parts:
    - **Part 3:** Open-Meteo weather, Web Push reminders (VAPID), cancellation notices, and an in-process scheduler (croner) that also creates runs ahead of time.
    - **Part 4:** `club_share` snapshots (via `sharedStream`), check-ins, and attendance highlights: streaks, milestones, combined distance. Opt-in, never ranked by speed.
    - **Known gap:** an owner can't hand the club to someone else yet; they can only delete it.
@@ -183,8 +182,8 @@ Phase 2 of `docs/PRIVACY.md` takes precedence where they differ. In particular, 
 - **club_run_series:** RRULE, default location, and an order cutoff in minutes.
 - **club_run:** dated runs created ahead of time from the series, so each one can be edited or cancelled.
 - **rsvp:** going, maybe or no.
-- **menu_item:** a club's café menu, with options.
-- **coffee_order:** rsvp, item, options and note, plus a saved "usual" per user.
+- **menu_item:** a club's café menu, with options. Hidden, never deleted.
+- **coffee_order:** one per member per run, with the item name and choices copied in; **coffee_usual:** a saved order per member per club, optionally added on RSVP.
 - **club_share:** a snapshot of a run a member chose to share (summary, optionally a privacy-zoned track).
 - **checkin:** manual or from a `club_share`; feeds the attendance streak.
 - **Jobs:** an in-process scheduler (croner) runs order cutoff and summary, Web Push reminders (VAPID) and Open-Meteo weather lookups.

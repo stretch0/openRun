@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { editSchema } from './patch.js';
 
 export const shoeSchema = z.object({
   id: z.string(),
@@ -20,7 +21,7 @@ export const createShoeSchema = z.object({
 });
 export type CreateShoe = z.infer<typeof createShoeSchema>;
 
-export const updateShoeSchema = createShoeSchema
-  .extend({ retired: z.boolean() })
-  .partial();
+export const updateShoeSchema = editSchema(
+  createShoeSchema.extend({ retired: z.boolean() }),
+);
 export type UpdateShoe = z.infer<typeof updateShoeSchema>;

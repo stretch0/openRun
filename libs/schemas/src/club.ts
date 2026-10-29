@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { editSchema } from './patch.js';
+import { menuItemSchema, runCoffeeSchema, usualSchema } from './coffee.js';
 
 export const clubRoleSchema = z.enum(['owner', 'organiser', 'member']);
 export type ClubRole = z.infer<typeof clubRoleSchema>;
@@ -30,6 +32,12 @@ const timeSchema = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use HH:MM, e.g. 08:00');
 const daySchema = z.iso.date();
+/** Minutes before the start that coffee orders lock. */
+const cutoffSchema = z
+  .number()
+  .int()
+  .min(0)
+  .max(24 * 60);
 
 export const locationSchema = z.object({
   id: z.string(),
@@ -59,6 +67,7 @@ export const seriesSchema = z.object({
   startTime: z.string(),
   locationId: z.string().nullable(),
   notes: z.string().nullable(),
+  orderCutoffMin: z.number(),
   ended: z.boolean(),
 });
 export type Series = z.infer<typeof seriesSchema>;
@@ -71,14 +80,14 @@ export const createSeriesSchema = z.object({
   startTime: timeSchema,
   locationId: z.string().nullish(),
   notes: z.string().trim().max(1000).nullish(),
+  orderCutoffMin: cutoffSchema.default(0),
 });
 export type CreateSeries = z.infer<typeof createSeriesSchema>;
 
 /** Edits apply to runs that haven't happened yet; past runs keep their details. */
-export const updateSeriesSchema = createSeriesSchema
-  .omit({ startsOn: true })
-  .partial()
-  .extend({ ended: z.boolean().optional() });
+export const updateSeriesSchema = editSchema(
+  createSeriesSchema.omit({ startsOn: true }),
+).extend({ ended: z.boolean().optional() });
 export type UpdateSeries = z.infer<typeof updateSeriesSchema>;
 
 export const memberSchema = z.object({
@@ -116,6 +125,9 @@ export const clubSchema = clubSummarySchema.extend({
   series: z.array(seriesSchema),
   /** Pending members are only listed for organisers. */
   members: z.array(memberSchema),
+  /** The café menu. Organisers also see hidden items. */
+  menu: z.array(menuItemSchema),
+  myUsual: usualSchema.nullable(),
 });
 export type Club = z.infer<typeof clubSchema>;
 
@@ -127,7 +139,7 @@ export const createClubSchema = z.object({
 });
 export type CreateClub = z.infer<typeof createClubSchema>;
 
-export const updateClubSchema = createClubSchema.partial();
+export const updateClubSchema = editSchema(createClubSchema);
 export type UpdateClub = z.infer<typeof updateClubSchema>;
 
 /** What someone sees before joining from an invite link. */
@@ -187,6 +199,8 @@ export const clubRunDetailSchema = clubRunSchema.extend({
   timezone: z.string(),
   canManage: z.boolean(),
   attendees: z.array(attendeeSchema),
+  /** Null when the club has nothing on its menu. */
+  coffee: runCoffeeSchema.nullable(),
 });
 export type ClubRunDetail = z.infer<typeof clubRunDetailSchema>;
 
@@ -195,10 +209,11 @@ export const createClubRunSchema = z.object({
   startsAt: z.iso.datetime({ offset: true }),
   locationId: z.string().nullish(),
   notes: z.string().trim().max(1000).nullish(),
+  orderCutoffMin: cutoffSchema.default(0),
 });
 export type CreateClubRun = z.infer<typeof createClubRunSchema>;
 
-export const updateClubRunSchema = createClubRunSchema.partial().extend({
+export const updateClubRunSchema = editSchema(createClubRunSchema).extend({
   status: z.enum(['scheduled', 'cancelled']).optional(),
   cancelledReason: z.string().trim().max(500).nullish(),
 });

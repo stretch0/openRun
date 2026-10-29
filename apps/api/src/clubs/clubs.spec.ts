@@ -9,21 +9,7 @@ import {
   locationSchema,
   seriesSchema,
 } from '@openrun/schemas';
-import { type App, get, origin, setup, signUp } from '../test-utils.js';
-
-function send(
-  app: App,
-  cookie: string,
-  method: string,
-  path: string,
-  body?: unknown,
-) {
-  return app.request(path, {
-    method,
-    headers: { 'content-type': 'application/json', cookie, origin },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-}
+import { type App, get, send, setup, signUp } from '../test-utils.js';
 
 async function createClub(app: App, cookie: string, extra: object = {}) {
   const res = await send(app, cookie, 'POST', '/api/clubs', {
@@ -312,6 +298,45 @@ describe('clubs', () => {
       },
     );
     expect(await runs(app, ann.cookie, club.id)).toEqual([]);
+  });
+
+  it('keeps settings an edit didn’t mention', async () => {
+    const { app } = setup();
+    const { cookie } = await signUp(app, 'owner@example.com');
+    const club = await createClub(app, cookie, { requireApproval: true });
+    const renamed = clubSchema.parse(
+      await (
+        await send(app, cookie, 'PATCH', `/api/clubs/${club.id}`, {
+          name: 'Renamed',
+        })
+      ).json(),
+    );
+    expect(renamed.requireApproval).toBe(true);
+
+    const series = seriesSchema.parse(
+      await (
+        await send(app, cookie, 'POST', `/api/clubs/${club.id}/series`, {
+          title: 'Fortnightly',
+          days: ['SA'],
+          interval: 2,
+          startsOn: today(),
+          startTime: '08:00',
+          orderCutoffMin: 30,
+        })
+      ).json(),
+    );
+    const edited = seriesSchema.parse(
+      await (
+        await send(
+          app,
+          cookie,
+          'PATCH',
+          `/api/clubs/${club.id}/series/${series.id}`,
+          { title: 'Every other Saturday' },
+        )
+      ).json(),
+    );
+    expect(edited).toMatchObject({ interval: 2, orderCutoffMin: 30 });
   });
 
   it('rejects unknown time zones and other clubs’ locations', async () => {

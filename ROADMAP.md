@@ -33,8 +33,8 @@ See [docs/PRIVACY.md](docs/PRIVACY.md), phase 1.
 - ✅ Clubs with owner, organiser and member roles; join by link or code, optional approval
 - ✅ Meeting points, repeating runs (RRULE), one-off runs, cancellations
 - ✅ RSVP (going / maybe / not going)
-- Café menu, coffee order with a saved "usual"
-- Order cutoff that locks orders and builds a summary any member can show the cashier on their phone (big text, works offline)
+- ✅ Café menu, coffee order with a saved "usual" (optionally ordered whenever you say you're going)
+- ✅ Order cutoff that locks orders and builds a summary any member can show the cashier on their phone (big text, works offline, keeps the screen on)
 - Weather forecast (Open-Meteo), Web Push reminders, cancellations
 - ✅ Built as its own module that never reads members' run logs; members choose a sharing level per club (attendance only, summaries, or full)
 - Check-ins (manual, or from a run the member shares)

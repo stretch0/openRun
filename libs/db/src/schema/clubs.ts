@@ -20,6 +20,10 @@ export const shareLevels = ['attendance', 'summaries', 'full'] as const;
 export const rsvpStatuses = ['going', 'maybe', 'not_going'] as const;
 export const clubRunStatuses = ['scheduled', 'cancelled'] as const;
 
+/** Same shapes as MenuOption and OrderChoice in libs/domain/coffee. */
+type MenuOption = { name: string; choices: string[] };
+type OrderChoice = { option: string; choice: string };
+
 export const club = sqliteTable('club', {
   id: id(),
   name: text('name').notNull(),
@@ -99,6 +103,8 @@ export const clubRunSeries = sqliteTable(
       onDelete: 'set null',
     }),
     notes: text('notes'),
+    /** Coffee orders lock this many minutes before each run starts. */
+    orderCutoffMin: integer('order_cutoff_min').notNull().default(0),
     /** Stopped series keep their past runs but create no new ones. */
     endedAt: timestamp('ended_at'),
     ...timestamps,
@@ -123,6 +129,7 @@ export const clubRun = sqliteTable(
       onDelete: 'set null',
     }),
     notes: text('notes'),
+    orderCutoffMin: integer('order_cutoff_min').notNull().default(0),
     status: text('status', { enum: clubRunStatuses })
       .notNull()
       .default('scheduled'),
@@ -150,4 +157,74 @@ export const rsvp = sqliteTable(
     ...timestamps,
   },
   (t) => [uniqueIndex('rsvp_run_user_idx').on(t.clubRunId, t.userId)],
+);
+
+/** Something on the club's café menu. Hidden rather than deleted, so past orders still read. */
+export const menuItem = sqliteTable(
+  'menu_item',
+  {
+    id: id(),
+    clubId: text('club_id')
+      .notNull()
+      .references(() => club.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    options: text('options', { mode: 'json' })
+      .$type<MenuOption[]>()
+      .notNull()
+      .default([]),
+    hidden: integer('hidden', { mode: 'boolean' }).notNull().default(false),
+    ...timestamps,
+  },
+  (t) => [index('menu_item_club_idx').on(t.clubId)],
+);
+
+/**
+ * A member's coffee for a run they're going to. The item's name and choices
+ * are copied, so later menu changes don't rewrite orders.
+ */
+export const coffeeOrder = sqliteTable(
+  'coffee_order',
+  {
+    id: id(),
+    clubRunId: text('club_run_id')
+      .notNull()
+      .references(() => clubRun.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    menuItemId: text('menu_item_id').references(() => menuItem.id, {
+      onDelete: 'set null',
+    }),
+    item: text('item').notNull(),
+    choices: text('choices', { mode: 'json' })
+      .$type<OrderChoice[]>()
+      .notNull()
+      .default([]),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex('coffee_order_run_user_idx').on(t.clubRunId, t.userId)],
+);
+
+/** A member's usual order at a club, optionally added whenever they say they're going. */
+export const coffeeUsual = sqliteTable(
+  'coffee_usual',
+  {
+    id: id(),
+    clubId: text('club_id')
+      .notNull()
+      .references(() => club.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    menuItemId: text('menu_item_id')
+      .notNull()
+      .references(() => menuItem.id, { onDelete: 'cascade' }),
+    choices: text('choices', { mode: 'json' })
+      .$type<OrderChoice[]>()
+      .notNull()
+      .default([]),
+    autoAdd: integer('auto_add', { mode: 'boolean' }).notNull().default(false),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex('coffee_usual_club_user_idx').on(t.clubId, t.userId)],
 );
