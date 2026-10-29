@@ -57,3 +57,15 @@ describe('privacy zones', () => {
     expect(insideCircle(points[3].lat, points[3].lng, home)).toBe(false);
   });
 });
+
+describe('randomiseZone bounds', () => {
+  it('always covers the drawn circle and never reaches past 1.8 × its radius', () => {
+    const drawn = { lat: 51.5, lng: -0.1, radiusM: 300 };
+    for (const r of [0, 0.25, 0.5, 0.999]) {
+      const zone = randomiseZone(drawn, () => r);
+      const shift = haversine(drawn.lat, drawn.lng, zone.lat, zone.lng);
+      expect(zone.radiusM).toBeGreaterThanOrEqual(drawn.radiusM + shift - 1e-6);
+      expect(shift + zone.radiusM).toBeLessThanOrEqual(1.8 * drawn.radiusM);
+    }
+  });
+});
