@@ -1,0 +1,55 @@
+name: Release files
+
+# Attaches the source archive to a GitHub release, with a signed build
+# provenance attestation (Sigstore) so anyone can check it came from this
+# repository's workflow:
+#
+#   gh attestation verify openrun-0.1.0.tar.gz -R stretch0/openRun
+#
+# Runs when a release is published, or by hand for an existing one.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, e.g. v0.1.0
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  files:
+    name: Sign and attach release files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ env.TAG }}
+          persist-credentials: false
+      - name: Build the source archive
+        id: archive
+        run: |
+          name="openrun-${TAG#v}"
+          git archive --format=tar.gz --prefix="$name/" -o "$name.tar.gz" "$TAG"
+          echo "file=$name.tar.gz" >> "$GITHUB_OUTPUT"
+      - name: Attest where it was built
+        id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ steps.archive.outputs.file }}
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FILE: ${{ steps.archive.outputs.file }}
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          cp "$BUNDLE" "$FILE.sigstore.json"
+          gh release upload "$TAG" "$FILE" "$FILE.sigstore.json" --clobber --repo "$GITHUB_REPOSITORY"
