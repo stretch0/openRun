@@ -18,6 +18,7 @@ export function RegisterPage() {
   const [busy, setBusy] = useState(false);
 
   if (me) return <Navigate to="/" replace />;
+  if (instance?.demo) return <Navigate to="/login" replace />;
 
   const needsSetup = instance?.needsSetup ?? false;
   const needsInvite = !needsSetup && (instance?.inviteOnly ?? false);

@@ -33,5 +33,7 @@ export const instanceInfoSchema = z.object({
   needsSetup: z.boolean(),
   /** Whether meeting points can be found by searching for a place. */
   placeSearch: z.boolean(),
+  /** On a public demo, the shared login. Null everywhere else. */
+  demo: z.object({ email: z.string(), password: z.string() }).nullable(),
 });
 export type InstanceInfo = z.infer<typeof instanceInfoSchema>;

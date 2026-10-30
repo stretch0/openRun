@@ -8,7 +8,12 @@ import type { Config } from './config.js';
 
 export type Auth = ReturnType<typeof createAuth>;
 
-export function createAuth(db: Db, config: Config) {
+export function createAuth(
+  db: Db,
+  config: Config,
+  /** Off for the demo seed, which signs up several people at once. */
+  { rateLimit = true } = {},
+) {
   return betterAuth({
     appName: config.instanceName,
     baseURL: config.origin,
@@ -26,6 +31,7 @@ export function createAuth(db: Db, config: Config) {
       },
     }),
     emailAndPassword: { enabled: config.passwordLogin },
+    ...(rateLimit ? {} : { rateLimit: { enabled: false } }),
     // The app sets X-Forwarded-For itself unless TRUST_PROXY is on (see app.ts).
     advanced: { ipAddress: { ipAddressHeaders: ['x-forwarded-for'] } },
     plugins: [

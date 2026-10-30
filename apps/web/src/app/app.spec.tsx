@@ -33,6 +33,7 @@ describe('App', () => {
               passwordLogin: true,
               contact: null,
               placeSearch: true,
+              demo: null,
               needsSetup: true,
             })
           : respond({ error: 'Unauthorized' }, 401),

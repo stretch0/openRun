@@ -8,6 +8,7 @@ import {
 import { ensureUpcomingRuns } from './clubs/runs.js';
 import { refreshWeather } from './clubs/weather.js';
 import type { Config } from './config.js';
+import { resetDemo } from './demo/reset.js';
 import { syncAll } from './integrations/sync.js';
 import type { Notifier } from './push.js';
 
@@ -15,7 +16,7 @@ import type { Notifier } from './push.js';
  * Background jobs, run inside the server: reminders and coffee nudges every
  * minute, weather every half hour (each run's forecast refreshes every few
  * hours), intervals.icu sync every half hour, and runs created eight weeks
- * ahead every night.
+ * ahead every night. On the demo, everything is reset at 04:00 UTC.
  */
 export function startScheduler({
   db,
@@ -54,6 +55,15 @@ export function startScheduler({
     // Off the half hour, away from the weather job.
     new Cron('10,40 * * * *', { protect: true }, sync),
   ];
+  if (config.demo) {
+    jobs.push(
+      new Cron(
+        '0 4 * * *',
+        { protect: true, timezone: 'UTC' },
+        safely('demo reset', () => resetDemo(db, config)),
+      ),
+    );
+  }
   // Catch up after a restart, without delaying start-up.
   const startup = setTimeout(() => {
     void runsAhead().then(weather).then(sync);

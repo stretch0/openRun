@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { schema } from '@openrun/db';
 import type { InstanceInfo } from '@openrun/schemas';
 import type { AppEnv } from '../context.js';
+import { DEMO_LOGIN } from '../demo/seed.js';
 import { version } from '../version.js';
 
 export const instanceRoutes = new Hono<AppEnv>().get('/', (c) => {
@@ -20,5 +21,6 @@ export const instanceRoutes = new Hono<AppEnv>().get('/', (c) => {
     contact: config.contact,
     needsSetup: users === 0,
     placeSearch: config.placeSearchUrl !== null,
+    demo: config.demo ? DEMO_LOGIN : null,
   });
 });
