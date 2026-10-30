@@ -12,6 +12,7 @@ import { api } from '../lib/api';
 import { authClient } from '../lib/auth-client';
 import { authErrorMessage } from '../lib/auth-errors';
 import { useMe } from '../lib/queries';
+import { type ThemeChoice, useTheme } from '../lib/theme';
 
 export function SettingsPage() {
   const { data: me } = useMe();
@@ -132,6 +133,7 @@ export function SettingsPage() {
 
       <section className="card space-y-3">
         <h2 className="font-semibold">This device</h2>
+        <Appearance />
         <InstallButton />
         <button className="btn-secondary w-full" onClick={signOut}>
           Sign out
@@ -268,5 +270,43 @@ function ChangePassword() {
         Change password
       </button>
     </form>
+  );
+}
+
+const THEMES: { value: ThemeChoice; label: string }[] = [
+  { value: 'system', label: 'Match device' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
+
+function Appearance() {
+  const [theme, setTheme] = useTheme();
+  return (
+    <div>
+      <p className="label" id="appearance">
+        Appearance
+      </p>
+      <div
+        className="flex rounded-lg bg-stone-100 p-1 text-sm dark:bg-stone-800"
+        role="group"
+        aria-labelledby="appearance"
+      >
+        {THEMES.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            className={`flex-1 rounded-md px-3 py-1.5 ${
+              theme === t.value
+                ? 'bg-white font-medium shadow-sm dark:bg-stone-700'
+                : 'text-stone-500'
+            }`}
+            aria-pressed={theme === t.value}
+            onClick={() => setTheme(t.value)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

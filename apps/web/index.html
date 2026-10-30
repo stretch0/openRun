@@ -21,6 +21,24 @@
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
+    <script>
+      // Light or dark before the first paint, so the page never flashes the
+      // wrong one. Kept in step with src/lib/theme.ts.
+      (function () {
+        var media = matchMedia('(prefers-color-scheme: dark)');
+        function apply() {
+          var choice = null;
+          try {
+            choice = localStorage.getItem('openrun-theme');
+          } catch (e) {}
+          var dark = choice === 'dark' || (choice !== 'light' && media.matches);
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        }
+        apply();
+        media.addEventListener('change', apply);
+        window.addEventListener('storage', apply);
+      })();
+    </script>
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>

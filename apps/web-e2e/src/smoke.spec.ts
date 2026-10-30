@@ -107,6 +107,28 @@ test.describe('signed in', () => {
     await expect(page.getByText('No runs yet')).toBeVisible();
   });
 
+  test('switches between light and dark mode', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/settings');
+    const html = page.locator('html');
+    await expect(html).toHaveAttribute('data-theme', 'light');
+
+    await page.getByRole('button', { name: 'Dark' }).click();
+    await expect(html).toHaveAttribute('data-theme', 'dark');
+    await page.reload();
+    await expect(html).toHaveAttribute('data-theme', 'dark');
+    await expect(page.getByRole('button', { name: 'Dark' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    // Matching the device follows it as it changes.
+    await page.getByRole('button', { name: 'Match device' }).click();
+    await expect(html).toHaveAttribute('data-theme', 'light');
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await expect(html).toHaveAttribute('data-theme', 'dark');
+  });
+
   test('adds a run by hand', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('link', { name: 'Add run' }).click();
