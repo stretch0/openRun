@@ -14,8 +14,9 @@ RUN npx nx run-many -t build -p web && npx nx run api:prune
 # dependencies stay in: they carry sharp's prebuilt libvips for this platform.
 # The pruned package.json leaves out the root's overrides, which its lockfile
 # still follows, so they're copied over first or npm ci refuses the lockfile.
-RUN node -e "const fs=require('fs');const p='apps/api/dist/package.json';const pkg=JSON.parse(fs.readFileSync(p));const {overrides}=JSON.parse(fs.readFileSync('package.json'));if(overrides)fs.writeFileSync(p,JSON.stringify({...pkg,overrides},null,2))" \
-  && cd apps/api/dist && npm ci --omit=dev --omit=peer
+RUN node -e "const fs=require('fs');const p='apps/api/dist/package.json';const pkg=JSON.parse(fs.readFileSync(p));const {overrides}=JSON.parse(fs.readFileSync('package.json'));if(overrides)fs.writeFileSync(p,JSON.stringify({...pkg,overrides},null,2))"
+WORKDIR /src/apps/api/dist
+RUN npm ci --omit=dev --omit=peer
 
 # ---- Runtime: production dependencies, the bundle, the PWA and migrations ----
 FROM node:22-bookworm-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da
