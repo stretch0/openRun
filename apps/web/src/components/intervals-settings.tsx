@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useState } from 'react';
 import type { IntegrationSync, IntervalsConnection } from '@openrun/schemas';
 import {
   useConnectIntervals,
@@ -155,7 +155,12 @@ function Connected({ connection }: { connection: IntervalsConnection }) {
   const update = useUpdateIntervals();
   const disconnect = useDisconnectIntervals();
   const [syncFrom, setSyncFrom] = useState(connection.syncFrom);
-  useEffect(() => setSyncFrom(connection.syncFrom), [connection.syncFrom]);
+  // Follow the saved date when it changes elsewhere (another device, a sync).
+  const [saved, setSaved] = useState(connection.syncFrom);
+  if (saved !== connection.syncFrom) {
+    setSaved(connection.syncFrom);
+    setSyncFrom(connection.syncFrom);
+  }
   const syncing = sync.isPending || connection.syncing;
   const latest = connection.syncs[0];
 
