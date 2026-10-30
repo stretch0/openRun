@@ -1,10 +1,10 @@
 # openRun
 
-An open-source, self-hosted running app: log your runs, plan your training, sync from your watch, connect AI assistants over MCP, and organise your run club (including the coffee order).
+An open-source, self-hosted running app: log your runs, sync from your watch, and organise your run club (including the coffee order).
 
 Your runs are yours: they're private unless you choose to share them, and clubs only ever see what you send them. Run it for yourself, or for friends and family who trust you with their data. It's inspired by [openGym](https://github.com/DuarteSantos8/openGym).
 
-> **Status: early development.** Accounts, the run log, stats, privacy controls, run clubs and watch sync work. Training plans and MCP are next. See [ROADMAP.md](ROADMAP.md).
+> **Status: early development.** Accounts, the run log, stats, privacy controls, run clubs and watch sync work. Next is the v0.1 release. See [ROADMAP.md](ROADMAP.md).
 
 ## Features
 
@@ -17,7 +17,6 @@ Your runs are yours: they're private unless you choose to share them, and clubs 
 | Privacy: private by default, sharing settings, privacy zones                   | ✅           |
 | Run clubs: repeating runs, RSVPs, coffee orders, weather, reminders            | ✅           |
 | Watch sync via intervals.icu (Garmin, Coros, Polar, Suunto, Wahoo)             | ✅           |
-| Training plans, workouts to your watch, MCP server                             | Planned (M4) |
 
 ## Self-hosting with Docker
 

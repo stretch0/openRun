@@ -8,7 +8,6 @@ openRun ships as **one Docker image**. A Node API built with [Hono](https://hono
 browser / installed PWA ──► api (Hono, Node 22) ──► SQLite (/data)
                               ├─ /api/auth/*   Better Auth (password, passkeys)
                               ├─ /api/*        app routes
-                              ├─ /mcp          MCP server (M4)
                               └─ /*            built PWA (apps/web/dist)
 ```
 
@@ -25,7 +24,7 @@ browser / installed PWA ──► api (Hono, Node 22) ──► SQLite (/data)
 | `libs/domain`         | Pure, unit-tested running logic: units, streams, splits, best efforts                 |
 | `libs/activity-files` | FIT and GPX parsing into one device-neutral activity shape (Node only)                |
 
-Planned libs: `mcp` (tool definitions) and `ui`. Sync lives in `apps/api/src/integrations` (see Integrations below).
+Planned libs: `ui`. Sync lives in `apps/api/src/integrations` (see Integrations below).
 
 Libraries are not buildable. They export TypeScript source, and the consuming app's bundler compiles it.
 
@@ -66,6 +65,7 @@ The rules are in [PRIVACY.md](PRIVACY.md). How they're implemented:
 - Repeating runs are stored as a weekly RRULE subset plus a local start time and the club's time zone. `libs/domain/src/schedule.ts` turns them into instants, handling clock changes (a skipped time moves later; a repeated time uses the first).
 - Runs exist eight weeks ahead in `club_run`, created on demand when a club or its runs are viewed (`ensureUpcomingRuns`, safe to repeat thanks to a unique index on series and start time). Editing a series updates future runs, removes ones no longer on the schedule and keeps RSVPs on the rest. A scheduler arrives with reminders in M2 part 3.
 - Someone who leaves a club, or is removed, takes their RSVPs, coffee orders and usual with them.
+- Each club has exactly one owner. The owner can hand the club to any active member (`POST /api/clubs/:id/transfer`), staying on as an organiser; that is the only way an owner can leave short of deleting the club.
 - **Coffee** (`apps/api/src/clubs/coffee.ts`, pure logic in `libs/domain/src/coffee.ts`): organisers keep a café menu (items with optional single-choice options, hidden rather than deleted). Members who are going order one item per run; the item name and choices are copied into the order, so menu edits never rewrite orders. Orders lock `order_cutoff_min` before the start (set per series, copied to each run). Saying anything other than "going" removes the order; saying "going" adds the member's usual if they turned that on. Any active member can open the order list (`GET …/runs/:runId/orders`); the run page fetches it ahead of time so the service worker's API cache has it for the café, and the page holds a screen wake lock.
 - **Sharing runs** (`apps/api/src/clubs/shares.ts`): the run log side (`routes/activities.ts`, `PUT /api/activities/:id/clubs/:clubId`) builds a snapshot and passes it in, with the route only as a callback the club side calls when the member's level is `full` (and the route comes from `sharedStream`, so it's privacy-zoned and empty unless map sharing is on). Shares are unique per club and run, matched to a club run within 90 minutes, and survive the original being edited or deleted. Withdrawn by the member, by making the run (or all runs) private, or by leaving the club.
 - **Highlights** (`GET /api/clubs/:id/highlights`, logic in `libs/domain/src/highlights.ts`): attendance is a "going" RSVP to a run that went ahead. Weekly streaks (a streak survives until a whole week is missed), milestones at 1, 10, 25, 50… runs and rainy runs from the last 30 days, for members with `club_member.highlights` on; the month's turnout and shared distance count everyone and name nobody.
@@ -78,7 +78,6 @@ The rules are in [PRIVACY.md](PRIVACY.md). How they're implemented:
 - The first account becomes `admin` (`FIRST_USER_ADMIN`).
 - With `INVITE_ONLY=true`, sign-up needs an unused, unexpired invite code. If the invite has an email, the address must match. Admins create invites in the app.
 - Better Auth rate-limits by client IP. Unless `TRUST_PROXY` is set, the API overwrites `X-Forwarded-For` with the socket address so clients can't spoof it.
-- MCP clients (M4) will use hashed personal access tokens (`api_token` table) with read or write scope.
 
 ## Notifications and the scheduler
 
@@ -114,6 +113,6 @@ How it works (`apps/api/src/integrations`):
 - **Garmin attribution:** intervals.icu's API terms require crediting Garmin on data from Garmin devices. `activity.device` holds e.g. "Garmin Forerunner 265" (built from `device_name`, prefixed with "Garmin" for `GARMIN_CONNECT` activities) and is shown on the feed, the run page and club shares (copied into `club_share.device`).
 - `INTERVALS_URL` points at intervals.icu; empty turns sync off. Tests stub `fetch`; e2e runs `apps/web-e2e/fake-intervals.mjs`.
 
-Later: pushing planned workouts to the intervals.icu calendar, which sends them on to Garmin (M4); OAuth and webhooks instead of polling, if openRun registers as an intervals.icu app.
+Later: pushing planned workouts to the intervals.icu calendar, which sends them on to Garmin; OAuth and webhooks instead of polling, if openRun registers as an intervals.icu app.
 
 - **Weather:** Open-Meteo. **Maps:** MapLibre with OSM tiles. Neither needs an API key.

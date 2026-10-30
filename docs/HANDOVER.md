@@ -2,7 +2,7 @@
 
 ## Context
 
-openRun is an open-source, self-hosted running app: run log, training plans, run clubs with RSVPs and coffee orders, Garmin/Strava sync and an MCP server. It is inspired by DuarteSantos8/openGym.
+openRun is an open-source, self-hosted running app: run log, run clubs with RSVPs and coffee orders, and watch sync through intervals.icu. It is inspired by DuarteSantos8/openGym.
 
 The previous session planned the product and built **M0 (foundation)**. You're picking it up in a new session that has a test environment. The repo is `stretch0/openRun`. The default branch is **`main`**; work lands through PRs.
 
@@ -15,7 +15,7 @@ Read first, in this order: `CLAUDE.md`, `docs/ARCHITECTURE.md`, `ROADMAP.md`, `R
 - **Stack:** Hono API, React 19 + Vite PWA, SQLite through better-sqlite3 + Drizzle, Better Auth for password and passkey sign-in.
 - **Deployment:** a single Docker image in which the API serves the built PWA. Data lives in the `/data` volume.
 - **Migrations:** kept in their own Nx lib (`libs/db-migrations`) so `nx affected` only runs migration targets when the schema changes. This was the user's explicit request.
-- **v0.1 scope** is M0 to M4: foundation, run log, run clubs, Garmin/Strava sync, then plans and MCP. Suggested order is M1, then M2, then M3, then M4.
+- **v0.1 scope** is M0 to M3: foundation, run log, privacy controls, run clubs and watch sync, then the release work in ROADMAP.md. Training plans and MCP were dropped from v0.1: Garmin MCP servers already build plans and put workouts on the watch.
 - **Licence:** AGPL-3.0-or-later. Tentative; the user may prefer MIT.
 - **Garmin:** ~~unofficial `garmin-connect`-style sign-in~~. Revised in October 2026: sync goes through intervals.icu; Garmin directly and Strava were ruled out (see `docs/ARCHITECTURE.md` → Integrations).
 - **Runna:** it has no API. ~~Read its workouts from the Garmin calendar.~~ Dropped with direct Garmin access.
@@ -137,7 +137,7 @@ Schema change workflow:
 1. Check out `main`, run `npm install`, then `npx nx run-many -t lint typecheck test build check` and the e2e tests.
 2. ~~Build and run the Docker image normally.~~ Done on 2026-10-28: it builds and boots cleanly without the sandbox workarounds, and imports work inside it.
 3. In a real browser, register, add a passkey, sign out and sign back in with it. Install the PWA. Create an invite and use it with `INVITE_ONLY=true`.
-4. Next: **M4, plans and MCP.** M3 is done: watch sync through intervals.icu; see `docs/ARCHITECTURE.md` → Integrations. M2 (clubs) is done too; see → Clubs and → Notifications.
+4. Next: **the v0.1 release** (ROADMAP.md → Release v0.1). M3 is done: watch sync through intervals.icu; see `docs/ARCHITECTURE.md` → Integrations. M2 (clubs) is done too; see → Clubs and → Notifications.
    - **Known gap:** an owner can't hand the club to someone else yet; they can only delete it.
 
 ## M1 status

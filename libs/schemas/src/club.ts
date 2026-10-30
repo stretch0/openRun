@@ -165,6 +165,10 @@ export const updateMemberSchema = z.object({
 });
 export type UpdateMember = z.infer<typeof updateMemberSchema>;
 
+/** Hands the club to another active member; the old owner stays as an organiser. */
+export const transferClubSchema = z.object({ userId: z.string().min(1) });
+export type TransferClub = z.infer<typeof transferClubSchema>;
+
 export const updateMyMembershipSchema = z.object({
   shareLevel: shareLevelSchema.optional(),
   /** No notifications from this club. */

@@ -26,6 +26,7 @@ import {
   createSeriesSchema,
   joinClubSchema,
   rsvpInputSchema,
+  transferClubSchema,
   updateClubRunSchema,
   updateClubSchema,
   updateMemberSchema,
@@ -403,6 +404,34 @@ export const clubRoutes = new Hono<AuthedEnv>()
     c.get('db').delete(schema.club).where(eq(schema.club.id, club.id)).run();
     return c.body(null, 204);
   })
+  .post('/:id/transfer', zValidator('json', transferClubSchema), (c) => {
+    const club = findClub(c, c.req.param('id'));
+    const m = club && me(c, club.id);
+    if (!club || !m) return notFound(c);
+    if (m.role !== 'owner' || !isActive(m)) {
+      return c.json({ error: 'Only the owner can hand over the club' }, 403);
+    }
+    const target = getMembership(
+      c.get('db'),
+      club.id,
+      c.req.valid('json').userId,
+    );
+    if (!isActive(target) || target.id === m.id) {
+      return c.json({ error: 'Choose another member of the club' }, 400);
+    }
+    const updated = c.get('db').transaction((tx) => {
+      tx.update(schema.clubMember)
+        .set({ role: 'organiser' })
+        .where(eq(schema.clubMember.id, m.id))
+        .run();
+      tx.update(schema.clubMember)
+        .set({ role: 'owner' })
+        .where(eq(schema.clubMember.id, target.id))
+        .run();
+      return { ...m, role: 'organiser' as const };
+    });
+    return c.json(toClub(c, club, updated));
+  })
   .post('/:id/join-code', (c) => {
     const club = findClub(c, c.req.param('id'));
     const m = club && me(c, club.id);
@@ -466,7 +495,10 @@ export const clubRoutes = new Hono<AuthedEnv>()
     const leaving = target.id === actor.id;
     if (leaving && actor.role === 'owner') {
       return c.json(
-        { error: 'The owner can’t leave. Delete the club instead.' },
+        {
+          error:
+            'The owner can’t leave. Hand the club to another member first, or delete it.',
+        },
         400,
       );
     }

@@ -413,6 +413,22 @@ test.describe('clubs', () => {
     await expect(
       highlights.getByLabel(/Celebrate me in highlights/),
     ).toBeChecked();
+
+    // Ada hands the club to Bea and stays on as an organiser.
+    await page.goto(`${clubUrl}/manage`);
+    const handOver = page.locator('section', {
+      hasText: 'Hand over the club',
+    });
+    await handOver.getByLabel('New owner').selectOption({ label: 'Bea' });
+    page.once('dialog', (d) => d.accept());
+    await handOver.getByRole('button', { name: 'Hand over' }).click();
+    await expect(handOver).toBeHidden();
+    await expect(
+      page.locator('li', { hasText: 'Bea' }).getByText('Owner'),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Delete club' }),
+    ).toBeHidden();
   });
 
   test('syncs runs from intervals.icu', async ({ page }) => {
