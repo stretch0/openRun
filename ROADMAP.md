@@ -49,13 +49,13 @@ Through intervals.icu; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) → Inte
 - ✅ Sync now, sync log, clear messages when the key stops working or a run came via Strava
 - ✅ Garmin attribution on runs recorded with Garmin devices
 
-### Release v0.1
+### Release v0.1 ✅
 
 - ✅ Handing over a club to another member
 - ✅ Push notifications checked on a real phone
 - ✅ Clean install from the Docker image, upgrades from older databases, a backup and restore guide
-- Make the published image public on GitHub
-- Tag v0.1.0
+- ✅ The published image is public on GitHub
+- ✅ Tagged [v0.1.0](https://github.com/stretch0/openRun/releases/tag/v0.1.0)
 
 ## After v0.1
 
