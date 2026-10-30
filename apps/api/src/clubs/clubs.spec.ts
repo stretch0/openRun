@@ -445,7 +445,7 @@ function uploadLogo(
   fields: Record<string, string> = {},
 ) {
   const form = new FormData();
-  form.append('logo', new File([bytes], name));
+  form.append('logo', new File([new Uint8Array(bytes)], name));
   for (const [key, value] of Object.entries(fields)) form.append(key, value);
   return app.request(`/api/clubs/${clubId}/logo`, {
     method: 'PUT',
