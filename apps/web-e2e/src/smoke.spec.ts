@@ -434,12 +434,12 @@ test.describe('clubs', () => {
   test('syncs runs from intervals.icu', async ({ page }) => {
     await page.goto('/settings');
     const card = page.getByRole('region', { name: 'Sync from your watch' });
-    await card.getByLabel('intervals.icu API key').fill('wrong-key');
-    await card.getByRole('button', { name: 'Connect' }).click();
-    await expect(card.getByText(/didn't accept that API key/)).toBeVisible();
-
-    await card.getByLabel('intervals.icu API key').fill('a-good-api-key');
-    await card.getByRole('button', { name: 'Connect' }).click();
+    // Signs in on (pretend) intervals.icu, which sends us back to Settings.
+    await card
+      .getByRole('button', { name: 'Connect with intervals.icu' })
+      .click();
+    await expect(page).toHaveURL(/\/settings$/);
+    await expect(card.getByText('Your runs are on their way')).toBeVisible();
     await expect(card.getByText('Connected to Test Runner')).toBeVisible();
     await expect(card.getByText(/1 run imported/)).toBeVisible();
     await card.getByText('Sync log').click();
@@ -457,7 +457,27 @@ test.describe('clubs', () => {
     await page.goto('/settings');
     page.once('dialog', (d) => d.accept());
     await card.getByRole('button', { name: 'Disconnect' }).click();
-    await expect(card.getByLabel('intervals.icu API key')).toBeVisible();
+    await expect(
+      card.getByRole('button', { name: 'Connect with intervals.icu' }),
+    ).toBeVisible();
+
+    // An API key still works.
+    await card.getByText('Use an API key instead').click();
+    await card.getByLabel('intervals.icu API key').fill('wrong-key');
+    await card.getByRole('button', { name: 'Connect with key' }).click();
+    await expect(card.getByText(/didn't accept that API key/)).toBeVisible();
+    await card.getByLabel('intervals.icu API key').fill('a-good-api-key');
+    await card.getByRole('button', { name: 'Connect with key' }).click();
+    await expect(card.getByText('Connected to Test Runner')).toBeVisible();
+    // The run is already in the log from the first connection.
+    await card.getByText('Sync log').click();
+    await expect(card.getByText('1 already here')).toBeVisible();
+
+    page.once('dialog', (d) => d.accept());
+    await card.getByRole('button', { name: 'Disconnect' }).click();
+    await expect(
+      card.getByRole('button', { name: 'Connect with intervals.icu' }),
+    ).toBeVisible();
   });
 });
 

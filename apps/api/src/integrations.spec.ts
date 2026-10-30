@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -16,6 +17,7 @@ afterEach(() => {
 });
 
 const KEY = 'good-api-key-123';
+const TOKEN = 'good-oauth-token-456';
 const DAY = 86_400_000;
 
 type FakeActivity = {
@@ -30,19 +32,53 @@ type FakeActivity = {
 
 /**
  * A pretend intervals.icu: one athlete, whose activities each have a FIT
- * file starting at `start_date`. Records every request.
+ * file starting at `start_date`. Takes the API key or, after an OAuth
+ * sign-in, the access token. Records every request.
  */
 function fakeIntervals(activities: FakeActivity[], athleteId = 'i42') {
   const requests: URL[] = [];
-  const state = { status: 200 };
+  const state = {
+    status: 200,
+    /** The PKCE challenge the code was issued for. */
+    codeChallenge: '',
+    tokenRequests: [] as URLSearchParams[],
+    revoked: [] as string[],
+  };
   const fetch = vi.fn(async (input: string | URL, init?: RequestInit) => {
     const url = new URL(input);
     requests.push(url);
-    const auth = new Headers(init?.headers).get('authorization');
-    const expected = `Basic ${Buffer.from(`API_KEY:${KEY}`).toString('base64')}`;
-    if (auth !== expected) return new Response('Unauthorized', { status: 401 });
-    if (state.status !== 200) return new Response('', { status: state.status });
     const path = url.pathname;
+    if (path === '/api/oauth/token') {
+      const form = new URLSearchParams(String(init?.body));
+      state.tokenRequests.push(form);
+      const challenge = createHash('sha256')
+        .update(form.get('code_verifier') ?? '')
+        .digest('base64url');
+      if (
+        form.get('client_id') !== 'openrun-test' ||
+        form.get('client_secret') !== 'shh' ||
+        form.get('code') !== 'good-code' ||
+        challenge !== state.codeChallenge
+      ) {
+        return new Response('Bad request', { status: 400 });
+      }
+      return Response.json({
+        token_type: 'Bearer',
+        access_token: TOKEN,
+        scope: 'ACTIVITY:READ',
+        athlete: { id: athleteId, name: 'Ann Runner' },
+      });
+    }
+    const auth = new Headers(init?.headers).get('authorization');
+    const key = `Basic ${Buffer.from(`API_KEY:${KEY}`).toString('base64')}`;
+    if (auth !== key && auth !== `Bearer ${TOKEN}`) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+    if (state.status !== 200) return new Response('', { status: state.status });
+    if (path === '/api/v1/disconnect-app' && init?.method === 'DELETE') {
+      state.revoked.push(auth);
+      return new Response(null, { status: 200 });
+    }
     if (path === '/api/v1/athlete/0') {
       return Response.json({ id: athleteId, name: 'Ann Runner' });
     }
@@ -313,6 +349,7 @@ describe('intervals.icu sync', () => {
     const res = await get(t.app, '/api/integrations', cookie);
     expect(integrationsSchema.parse(await res.json()).intervals).toEqual({
       available: false,
+      oauth: false,
       connection: null,
     });
     const put = await send(
@@ -361,5 +398,207 @@ describe('intervals.icu sync', () => {
       .where(eq(schema.clubShare.clubId, club.id))
       .get();
     expect(share?.device).toBe('Garmin Forerunner 965');
+  });
+});
+
+describe('intervals.icu sign-in (OAuth)', () => {
+  const OAUTH_ENV = {
+    INTERVALS_CLIENT_ID: 'openrun-test',
+    INTERVALS_CLIENT_SECRET: 'shh',
+  };
+
+  /**
+   * Starts the sign-in like the browser would and returns where intervals.icu
+   * would send the member back, plus the cookie that remembers it.
+   */
+  async function startSignIn(
+    t: ReturnType<typeof setup>,
+    cookie: string,
+    fake: ReturnType<typeof fakeIntervals>,
+    query = '?syncFrom=2026-03-01',
+  ) {
+    const res = await get(
+      t.app,
+      `/api/integrations/intervals/oauth/start${query}`,
+      cookie,
+    );
+    expect(res.status).toBe(302);
+    const to = new URL(res.headers.get('location') ?? '');
+    fake.state.codeChallenge = to.searchParams.get('code_challenge') ?? '';
+    const pending =
+      res.headers.get('set-cookie')?.split(';')[0] ?? 'missing-cookie';
+    return { to, state: to.searchParams.get('state') ?? '', pending };
+  }
+
+  async function comeBack(
+    t: ReturnType<typeof setup>,
+    cookie: string,
+    pending: string,
+    query: string,
+  ) {
+    const res = await get(
+      t.app,
+      `/api/integrations/intervals/oauth/callback?${query}`,
+      `${cookie}; ${pending}`,
+    );
+    expect(res.status).toBe(302);
+    return res.headers.get('location');
+  }
+
+  it('is offered only when the server has an OAuth app', async () => {
+    const plain = setup();
+    const { cookie } = await signUp(plain.app, 'ann@example.com');
+    const res = await get(plain.app, '/api/integrations', cookie);
+    expect(integrationsSchema.parse(await res.json()).intervals.oauth).toBe(
+      false,
+    );
+    const start = await get(
+      plain.app,
+      '/api/integrations/intervals/oauth/start',
+      cookie,
+    );
+    expect(start.status).toBe(404);
+
+    const t = setup(OAUTH_ENV);
+    const { cookie: c2 } = await signUp(t.app, 'ann@example.com');
+    const res2 = await get(t.app, '/api/integrations', c2);
+    expect(integrationsSchema.parse(await res2.json()).intervals.oauth).toBe(
+      true,
+    );
+  });
+
+  it('connects with a token and syncs with it', async () => {
+    const t = setup(OAUTH_ENV);
+    const { cookie } = await signUp(t.app, 'ann@example.com');
+    const fake = fakeIntervals([
+      { id: 'i1', start_date: daysAgo(1), type: 'Run' },
+    ]);
+    const { to, state, pending } = await startSignIn(t, cookie, fake);
+    expect(`${to.origin}${to.pathname}`).toBe(
+      'https://intervals.icu/oauth/authorize',
+    );
+    expect(Object.fromEntries(to.searchParams)).toMatchObject({
+      client_id: 'openrun-test',
+      redirect_uri:
+        'http://localhost:3000/api/integrations/intervals/oauth/callback',
+      scope: 'ACTIVITY:READ',
+      code_challenge_method: 'S256',
+    });
+    expect(pending).toMatch(/^openrun_intervals_oauth=/);
+
+    const back = await comeBack(
+      t,
+      cookie,
+      pending,
+      `code=good-code&state=${state}`,
+    );
+    expect(back).toBe('/settings?intervals=connected');
+
+    // The first sync runs in the background after the redirect.
+    await vi.waitFor(async () => {
+      const res = await get(t.app, '/api/integrations', cookie);
+      const { connection } = integrationsSchema.parse(
+        await res.json(),
+      ).intervals;
+      expect(connection).toMatchObject({
+        accountId: 'i42',
+        authMethod: 'oauth',
+        syncFrom: '2026-03-01',
+        syncing: false,
+        importedCount: 1,
+      });
+    });
+    const row = t.db.select().from(schema.integration).get();
+    expect(row?.credentials).not.toContain(TOKEN);
+
+    // Disconnecting revokes the token.
+    await send(t.app, cookie, 'DELETE', '/api/integrations/intervals');
+    expect(fake.state.revoked).toEqual([`Bearer ${TOKEN}`]);
+  });
+
+  it('sends the member back with a reason when it goes wrong', async () => {
+    const t = setup(OAUTH_ENV);
+    const { cookie } = await signUp(t.app, 'ann@example.com');
+    const fake = fakeIntervals([]);
+
+    // They said no on intervals.icu.
+    let s = await startSignIn(t, cookie, fake);
+    expect(
+      await comeBack(
+        t,
+        cookie,
+        s.pending,
+        `error=access_denied&state=${s.state}`,
+      ),
+    ).toBe('/settings?intervals=denied');
+
+    // A forged or stale state, or no cookie at all.
+    s = await startSignIn(t, cookie, fake);
+    expect(
+      await comeBack(t, cookie, s.pending, 'code=good-code&state=someone-else'),
+    ).toBe('/settings?intervals=expired');
+    expect(
+      await comeBack(t, cookie, '', `code=good-code&state=${s.state}`),
+    ).toBe('/settings?intervals=expired');
+
+    // Someone else's sign-in can't be finished in this member's browser.
+    s = await startSignIn(t, cookie, fake);
+    const { cookie: bob } = await signUp(t.app, 'bob@example.com');
+    expect(
+      await comeBack(t, bob, s.pending, `code=good-code&state=${s.state}`),
+    ).toBe('/settings?intervals=expired');
+
+    // intervals.icu won't swap the code.
+    s = await startSignIn(t, cookie, fake);
+    expect(
+      await comeBack(t, cookie, s.pending, `code=bad-code&state=${s.state}`),
+    ).toBe('/settings?intervals=failed');
+
+    expect(t.db.select().from(schema.integration).all()).toEqual([]);
+  });
+
+  it('keeps one account per person, and lets go of the spare token', async () => {
+    const t = setup(OAUTH_ENV);
+    const { cookie: ann } = await signUp(t.app, 'ann@example.com');
+    const fake = fakeIntervals([]);
+    await send(t.app, ann, 'PUT', '/api/integrations/intervals', {
+      apiKey: KEY,
+      syncFrom: '2026-01-01',
+    });
+
+    const { cookie: bob } = await signUp(t.app, 'bob@example.com');
+    const s = await startSignIn(t, bob, fake);
+    expect(
+      await comeBack(t, bob, s.pending, `code=good-code&state=${s.state}`),
+    ).toBe('/settings?intervals=taken');
+    expect(fake.state.revoked).toEqual([`Bearer ${TOKEN}`]);
+  });
+
+  it('switches a key connection to OAuth, keeping its start date and runs', async () => {
+    const t = setup(OAUTH_ENV);
+    const { cookie } = await signUp(t.app, 'ann@example.com');
+    const fake = fakeIntervals([
+      { id: 'i1', start_date: daysAgo(1), type: 'Run' },
+    ]);
+    await send(t.app, cookie, 'PUT', '/api/integrations/intervals', {
+      apiKey: KEY,
+      syncFrom: '2026-01-01',
+    });
+    await send(t.app, cookie, 'POST', '/api/integrations/intervals/sync');
+
+    // Reconnecting from Settings sends no start date.
+    const s = await startSignIn(t, cookie, fake, '');
+    await comeBack(t, cookie, s.pending, `code=good-code&state=${s.state}`);
+    await vi.waitFor(async () => {
+      const res = await get(t.app, '/api/integrations', cookie);
+      expect(
+        integrationsSchema.parse(await res.json()).intervals.connection,
+      ).toMatchObject({
+        authMethod: 'oauth',
+        syncFrom: '2026-01-01',
+        importedCount: 1,
+        syncing: false,
+      });
+    });
   });
 });

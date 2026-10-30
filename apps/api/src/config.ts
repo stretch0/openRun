@@ -37,6 +37,13 @@ const envSchema = z.object({
   WEATHER_URL: z.string().default('https://api.open-meteo.com/v1/forecast'),
   /** intervals.icu, for syncing runs from watches. Empty turns it off. */
   INTERVALS_URL: z.string().default('https://intervals.icu'),
+  /**
+   * An intervals.icu OAuth app, so members connect with a button instead of
+   * pasting an API key. Register one at https://intervals.icu/oauth/apply
+   * with ORIGIN/api/integrations/intervals/oauth/callback as the redirect URI.
+   */
+  INTERVALS_CLIENT_ID: z.string().optional(),
+  INTERVALS_CLIENT_SECRET: z.string().optional(),
   /** Web Push keys. Generated and kept in DATA_DIR if not set. */
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
@@ -55,6 +62,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     );
   }
   const dataDir = resolve(e.DATA_DIR);
+  const intervalsUrl = e.INTERVALS_URL.trim().replace(/\/+$/, '') || null;
+  const intervalsClientId = e.INTERVALS_CLIENT_ID?.trim();
+  const intervalsClientSecret = e.INTERVALS_CLIENT_SECRET?.trim();
   return {
     production,
     port: e.PORT,
@@ -82,7 +92,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     trustProxy: e.TRUST_PROXY,
     placeSearchUrl: e.PLACE_SEARCH_URL.trim() || null,
     weatherUrl: e.WEATHER_URL.trim() || null,
-    intervalsUrl: e.INTERVALS_URL.trim().replace(/\/+$/, '') || null,
+    intervalsUrl,
+    /** Null when members have to paste an API key instead. */
+    intervalsOAuth:
+      intervalsUrl && intervalsClientId && intervalsClientSecret
+        ? { clientId: intervalsClientId, clientSecret: intervalsClientSecret }
+        : null,
     vapidKeys:
       e.VAPID_PUBLIC_KEY && e.VAPID_PRIVATE_KEY
         ? { publicKey: e.VAPID_PUBLIC_KEY, privateKey: e.VAPID_PRIVATE_KEY }

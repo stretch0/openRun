@@ -19,6 +19,8 @@ export type IntegrationSync = z.infer<typeof integrationSyncSchema>;
 export const intervalsConnectionSchema = z.object({
   accountId: z.string(),
   accountName: z.string().nullable(),
+  /** Connected by pasting an API key, or by signing in to intervals.icu. */
+  authMethod: z.enum(['api_key', 'oauth']),
   /** Runs from this day on are imported. */
   syncFrom: z.iso.date(),
   status: integrationStatusSchema,
@@ -35,6 +37,11 @@ export const integrationsSchema = z.object({
   intervals: z.object({
     /** False when the server has intervals.icu sync turned off. */
     available: z.boolean(),
+    /**
+     * True when the server has an intervals.icu OAuth app, so members can
+     * connect with a button. Pasting an API key always works too.
+     */
+    oauth: z.boolean(),
     connection: intervalsConnectionSchema.nullable(),
   }),
 });
@@ -51,3 +58,18 @@ export const connectIntervalsSchema = z.object({
 export type ConnectIntervals = z.infer<typeof connectIntervalsSchema>;
 
 export const updateIntervalsSchema = z.object({ syncFrom: z.iso.date() });
+
+/** Starts connecting through intervals.icu's sign-in page. */
+export const startIntervalsOAuthSchema = z.object({
+  syncFrom: z.iso.date().optional(),
+});
+
+/** How the OAuth sign-in ended, as the settings page is told in `?intervals=`. */
+export const intervalsOAuthResults = [
+  'connected',
+  'denied',
+  'expired',
+  'taken',
+  'failed',
+] as const;
+export type IntervalsOAuthResult = (typeof intervalsOAuthResults)[number];

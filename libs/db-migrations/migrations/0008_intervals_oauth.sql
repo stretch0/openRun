@@ -1,0 +1,1 @@
+ALTER TABLE `integration` ADD `auth_method` text DEFAULT 'api_key' NOT NULL;

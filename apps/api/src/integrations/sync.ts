@@ -16,6 +16,7 @@ import { getPrivacySettings } from '../privacy.js';
 import { decryptSecret } from '../secrets.js';
 import {
   type IntervalsActivity,
+  type IntervalsAuth,
   IntervalsError,
   RUN_TYPES,
   deviceOf,
@@ -69,16 +70,19 @@ export async function syncIntegration(
   let error: string | null = null;
   let status: Integration['status'] = 'ok';
   try {
-    const apiKey = decryptSecret(config.authSecret, integration.credentials);
-    if (!apiKey) {
+    const secret = decryptSecret(config.authSecret, integration.credentials);
+    if (!secret) {
       throw new IntervalsError(
-        "The saved API key can't be read any more; paste it again",
+        integration.authMethod === 'oauth'
+          ? "The saved sign-in can't be read any more; connect again"
+          : "The saved API key can't be read any more; paste it again",
         401,
       );
     }
+    const auth: IntervalsAuth = { method: integration.authMethod, secret };
     const listed = await listActivities(
       config.intervalsUrl,
-      apiKey,
+      auth,
       day(new Date(integration.syncFrom.getTime() - DAY_MS)),
       day(new Date(now.getTime() + DAY_MS)),
     );
@@ -117,7 +121,7 @@ export async function syncIntegration(
         db,
         config,
         integration,
-        { baseUrl: config.intervalsUrl, apiKey },
+        { baseUrl: config.intervalsUrl, auth },
         item,
       );
       counts[outcome]++;
@@ -176,7 +180,7 @@ async function importOne(
   db: Db,
   config: Config,
   integration: Integration,
-  { baseUrl, apiKey }: { baseUrl: string; apiKey: string },
+  { baseUrl, auth }: { baseUrl: string; auth: IntervalsAuth },
   { activity, startedAt }: { activity: IntervalsActivity; startedAt: Date },
 ): Promise<'imported' | 'duplicates' | 'failed'> {
   const remember = (
@@ -197,7 +201,7 @@ async function importOne(
       .run();
 
   // Network trouble and rate limits end the sync; the run is tried next time.
-  const data = await downloadActivity(baseUrl, apiKey, activity);
+  const data = await downloadActivity(baseUrl, auth, activity);
   let parsed;
   try {
     parsed = await parseActivityFile(data);
@@ -312,6 +316,7 @@ export function describeConnection(
   return {
     accountId: integration.accountId,
     accountName: integration.accountName,
+    authMethod: integration.authMethod,
     syncFrom: day(integration.syncFrom),
     status: integration.status,
     lastError: integration.lastError,

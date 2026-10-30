@@ -57,9 +57,10 @@ export function PrivacyPage() {
         </p>
         <p>
           If you sync from your watch through intervals.icu, the server keeps
-          your intervals.icu API key, encrypted. Whoever runs the server could
-          still use it to reach your intervals.icu account, but never your
-          Garmin or other watch account. Disconnecting removes it.
+          the access you gave it (a sign-in that can only read your activities,
+          or your API key), encrypted. Whoever runs the server could still use
+          it to reach your intervals.icu account, but never your Garmin or other
+          watch account. Disconnecting removes it.
         </p>
         {instance?.contact && (
           <p>

@@ -8,6 +8,9 @@ export function useIntegrations() {
   return useQuery({
     queryKey: KEY,
     queryFn: () => api('/integrations', integrationsSchema),
+    // A sync can start without this page asking, e.g. after connecting.
+    refetchInterval: (query) =>
+      query.state.data?.intervals.connection?.syncing ? 2000 : false,
   });
 }
 

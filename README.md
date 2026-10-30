@@ -35,6 +35,10 @@ Open the URL. The first account you create becomes the admin. Everything is stor
 
 Passkeys need HTTPS (or `localhost`), so put openRun behind a reverse proxy such as Caddy or Traefik for anything beyond local use. When you do, set `TRUST_PROXY=true`. All settings are listed in [.env.example](.env.example).
 
+### Watch sync
+
+Members sync their watches through [intervals.icu](https://intervals.icu), which works out of the box: each member pastes their intervals.icu API key in Settings. To give them a "Connect with intervals.icu" button instead, [apply for an intervals.icu app](https://intervals.icu/oauth/apply) with the redirect URI `https://<your openRun address>/api/integrations/intervals/oauth/callback`. Once intervals.icu approves it, set `INTERVALS_CLIENT_ID` and `INTERVALS_CLIENT_SECRET` in `.env` and restart. Members who pasted a key keep syncing; pasting a key still works for anyone who prefers it.
+
 ### Upgrading
 
 Back up first, then:
@@ -48,7 +52,7 @@ Database changes are applied when openRun starts; `docker compose logs openrun` 
 
 ### Backups
 
-Everything lives in two places: the `./data` folder and your `.env`. Keep `.env` safe as well, because `BETTER_AUTH_SECRET` signs everyone's sessions and encrypts their intervals.icu keys. A database restored without it works, but everyone has to sign in and paste their intervals.icu key again.
+Everything lives in two places: the `./data` folder and your `.env`. Keep `.env` safe as well, because `BETTER_AUTH_SECRET` signs everyone's sessions and encrypts their intervals.icu keys and sign-ins. A database restored without it works, but everyone has to sign in and connect intervals.icu again.
 
 `./data` holds:
 

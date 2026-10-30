@@ -1,8 +1,10 @@
 // A pretend intervals.icu for the e2e tests: one athlete with one run from
-// a Garmin watch yesterday, served as a GPX file. Any key but "wrong" works.
+// a Garmin watch yesterday, served as a GPX file. Any key but "wrong" works,
+// and the OAuth sign-in says yes straight away.
 import { createServer } from 'node:http';
 
 const port = Number(process.env.PORT ?? 3109);
+const TOKEN = 'e2e-oauth-token';
 const start = new Date(Date.now() - 86_400_000);
 start.setUTCHours(7, 0, 0, 0);
 
@@ -17,18 +19,46 @@ function gpx() {
 createServer((req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${port}`);
   const auth = req.headers.authorization ?? '';
-  const key = Buffer.from(auth.replace(/^Basic /, ''), 'base64')
-    .toString()
-    .replace(/^API_KEY:/, '');
+  const key = auth.startsWith('Bearer ')
+    ? auth.slice(7) === TOKEN && TOKEN
+    : Buffer.from(auth.replace(/^Basic /, ''), 'base64')
+        .toString()
+        .replace(/^API_KEY:/, '');
   const json = (body) => {
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify(body));
   };
   if (url.pathname === '/health') return json({ ok: true });
+  if (url.pathname === '/oauth/authorize') {
+    const back = new URL(url.searchParams.get('redirect_uri') ?? '');
+    back.searchParams.set('code', 'e2e-code');
+    back.searchParams.set('state', url.searchParams.get('state') ?? '');
+    res.writeHead(302, { location: back.toString() });
+    return res.end();
+  }
+  if (url.pathname === '/api/oauth/token' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (chunk) => (body += chunk));
+    req.on('end', () => {
+      const form = new URLSearchParams(body);
+      if (form.get('code') !== 'e2e-code' || !form.get('code_verifier')) {
+        res.writeHead(400);
+        return res.end();
+      }
+      json({
+        token_type: 'Bearer',
+        access_token: TOKEN,
+        scope: 'ACTIVITY:READ',
+        athlete: { id: 'i4242', name: 'Test Runner' },
+      });
+    });
+    return;
+  }
   if (!key || key === 'wrong-key') {
     res.writeHead(401);
     return res.end();
   }
+  if (url.pathname === '/api/v1/disconnect-app') return json({});
   if (url.pathname === '/api/v1/athlete/0') {
     return json({ id: 'i4242', name: 'Test Runner' });
   }
