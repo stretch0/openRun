@@ -9,6 +9,7 @@ import {
 import { FormError } from '../components/auth-card';
 import { ClubHighlights } from '../components/club-highlights';
 import { ClubRunCard } from '../components/club-run-card';
+import { ClubLogo } from '../components/club-logo';
 import { CoffeePicker, describeOrder } from '../components/coffee';
 import { clubApi, useClub, useClubMutation, useClubRuns } from '../lib/clubs';
 import { ApiError } from '../lib/api';
@@ -55,11 +56,14 @@ export function ClubPage() {
           ← Clubs
         </Link>
         <div className="mt-1 flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-semibold">{c.name}</h1>
-            <p className="text-sm text-stone-500">
-              {c.memberCount} {c.memberCount === 1 ? 'member' : 'members'}
-            </p>
+          <div className="flex min-w-0 items-center gap-3">
+            <ClubLogo club={c} size="lg" />
+            <div className="min-w-0">
+              <h1 className="text-2xl font-semibold">{c.name}</h1>
+              <p className="text-sm text-stone-500">
+                {c.memberCount} {c.memberCount === 1 ? 'member' : 'members'}
+              </p>
+            </div>
           </div>
           {manage && (
             <Link
@@ -112,7 +116,7 @@ function UpcomingRuns({
   timeZone: string;
 }) {
   const [all, setAll] = useState(false);
-  const weekAhead = Date.now() + 7 * 86_400_000;
+  const [weekAhead] = useState(() => Date.now() + 7 * 86_400_000);
   const soon = Math.max(
     1,
     runs.filter((r) => Date.parse(r.startsAt) < weekAhead).length,

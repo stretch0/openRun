@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { ClubSummary } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
+import { ClubLogo } from '../components/club-logo';
 import {
   useClubPreview,
   useClubs,
@@ -55,27 +56,30 @@ function ClubCard({ club }: { club: ClubSummary }) {
   const pending = club.status === 'pending';
   const body = (
     <>
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="truncate font-medium">{club.name}</p>
-        <span className="shrink-0 text-xs text-stone-500">
-          {pending ? 'Waiting for approval' : ROLE_LABELS[club.role]}
-        </span>
+      <ClubLogo club={club} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="truncate font-medium">{club.name}</p>
+          <span className="shrink-0 text-xs text-stone-500">
+            {pending ? 'Waiting for approval' : ROLE_LABELS[club.role]}
+          </span>
+        </div>
+        <p className="mt-1 text-sm text-stone-500">
+          {club.nextRun
+            ? `Next: ${club.nextRun.title}, ${formatRunTime(club.nextRun.startsAt, club.timezone)}`
+            : pending
+              ? 'An organiser needs to let you in.'
+              : 'No runs scheduled'}
+        </p>
       </div>
-      <p className="mt-1 text-sm text-stone-500">
-        {club.nextRun
-          ? `Next: ${club.nextRun.title}, ${formatRunTime(club.nextRun.startsAt, club.timezone)}`
-          : pending
-            ? 'An organiser needs to let you in.'
-            : 'No runs scheduled'}
-      </p>
     </>
   );
   return pending ? (
-    <div className="card opacity-70">{body}</div>
+    <div className="card flex items-center gap-3 opacity-70">{body}</div>
   ) : (
     <Link
       to={`/clubs/${club.id}`}
-      className="card block transition hover:border-brand-500"
+      className="card flex items-center gap-3 transition hover:border-brand-500"
     >
       {body}
     </Link>
@@ -226,6 +230,9 @@ export function JoinClubPage() {
   return (
     <section className="card space-y-3 text-center">
       <p className="text-sm text-stone-500">You've been invited to</p>
+      <div className="flex justify-center">
+        <ClubLogo club={club} size="lg" />
+      </div>
       <h1 className="text-2xl font-semibold">{club.name}</h1>
       {club.description && <p className="text-stone-600">{club.description}</p>}
       <p className="text-sm text-stone-500">

@@ -1,0 +1,43 @@
+# The public demo on Fly.io. See docs/DEMO.md.
+#
+#   fly apps create openrun-demo
+#   fly secrets set -a openrun-demo BETTER_AUTH_SECRET="$(openssl rand -base64 32)"
+#   fly deploy -c deploy/demo/fly.toml --ha=false
+#
+# The demo rebuilds its data on every start, so it needs no volume: the
+# machine's own disk is thrown away on each restart or deploy, which is a
+# reset. Keep it to one machine. Each has its own database, so a second one
+# would show visitors two different demos and drop their sign-in.
+
+app = 'openrun-demo'
+primary_region = 'lhr'
+
+[build]
+  image = 'ghcr.io/stretch0/openrun:latest'
+
+[env]
+  DEMO_MODE = 'true'
+  ORIGIN = 'https://openrun-demo.fly.dev'
+  TRUST_PROXY = 'true'
+  INSTANCE_NAME = 'openRun demo'
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # Always on: seeding takes about a minute here, too long to make a visitor
+  # wait for a cold start, and stopping would also reset the demo mid-visit.
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = '2m'
+    interval = '30s'
+    timeout = '5s'
+    method = 'GET'
+    path = '/api/health'
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1

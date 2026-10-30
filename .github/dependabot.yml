@@ -1,0 +1,55 @@
+# Weekly update pull requests for npm packages, GitHub Actions and the Docker
+# base images. Security fixes come straight away, separately (turned on in the
+# repository settings). Other releases wait 14 days, so a compromised release
+# has time to be caught before it's proposed here. The cooldown only covers
+# the package being updated, not new versions of what it depends on: check the
+# lockfile diff.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    open-pull-requests-limit: 5
+    ignore:
+      # ESLint 10 waits for eslint-plugin-react, which crashes on it (used by
+      # Nx's React lint config). Remove once this ships:
+      # https://github.com/jsx-eslint/eslint-plugin-react/issues/3977
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
+      - dependency-name: '@eslint/js'
+        update-types: [version-update:semver-major]
+    groups:
+      # Nx's packages only work at the same version, majors included. Listed
+      # first, so they never land in the group below.
+      nx:
+        patterns: [nx, '@nx/*']
+      # One pull request for all other minor and patch updates; majors on
+      # their own.
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      actions:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    ignore:
+      # Stay on a long-term support Node (22 now). Moving to the next LTS is a
+      # deliberate change; odd-numbered releases are short-lived. Digest and
+      # patch updates of node:22 still come through.
+      - dependency-name: node
+        update-types: [version-update:semver-major]

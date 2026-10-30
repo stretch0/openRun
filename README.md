@@ -1,10 +1,27 @@
 # openRun
 
+[![CI](https://github.com/stretch0/openRun/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/stretch0/openRun/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/stretch0/openRun/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/stretch0/openRun/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/stretch0/openRun/badge)](https://scorecard.dev/viewer/?uri=github.com/stretch0/openRun)
+[![Latest release](https://img.shields.io/github/v/release/stretch0/openRun)](https://github.com/stretch0/openRun/releases/latest)
+[![Licence: AGPL-3.0](https://img.shields.io/github/license/stretch0/openRun)](LICENSE)
+
 An open-source, self-hosted running app: log your runs, sync from your watch, and organise your run club (including the coffee order).
 
 Your runs are yours: they're private unless you choose to share them, and clubs only ever see what you send them. Run it for yourself, or for friends and family who trust you with their data. It's inspired by [openGym](https://github.com/DuarteSantos8/openGym).
 
+**Try it:** [openrun-demo.fly.dev](https://openrun-demo.fly.dev) signs you in as Sam, a runner in a run club. It resets every night.
+
 > **Status: early development.** Accounts, the run log, stats, privacy controls, run clubs and watch sync work. v0.1 is out ([release notes](https://github.com/stretch0/openRun/releases/tag/v0.1.0)). See [ROADMAP.md](ROADMAP.md).
+
+<table>
+  <tr>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/runs-dark.png"><img src="docs/images/runs-light.png" alt="The run log: personal bests and recent runs" width="200"></picture></td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/run-dark.png"><img src="docs/images/run-light.png" alt="A run: the route on a map, with pace, heart rate and elevation charts" width="200"></picture></td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/club-dark.png"><img src="docs/images/club-light.png" alt="A run club with its upcoming runs, RSVPs and weather" width="200"></picture></td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/club-run-dark.png"><img src="docs/images/club-run-light.png" alt="A club run: meeting point, forecast, RSVP and the coffee order" width="200"></picture></td>
+  </tr>
+</table>
 
 ## Features
 
@@ -33,7 +50,7 @@ docker compose up -d
 
 Open the URL. The first account you create becomes the admin. Everything is stored in `./data` (see [Backups](#backups)).
 
-Passkeys need HTTPS (or `localhost`), so put openRun behind a reverse proxy such as Caddy or Traefik for anything beyond local use. When you do, set `TRUST_PROXY=true`. All settings are listed in [.env.example](.env.example).
+Passkeys need HTTPS (or `localhost`), so put openRun behind a reverse proxy such as Caddy or Traefik for anything beyond local use. When you do, set `TRUST_PROXY=true`. All settings are listed in [.env.example](.env.example). To run a public demo with sample data instead, see [docs/DEMO.md](docs/DEMO.md).
 
 ### Watch sync
 
@@ -138,6 +155,8 @@ PORT=3005 npm run dev
 | `npx nx affected -t lint typecheck test build` | Only what your change affects                            |
 
 The repo is an [Nx](https://nx.dev) monorepo. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how it fits together.
+
+Want to help? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licence
 

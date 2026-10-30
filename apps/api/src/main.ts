@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server';
 import { createDb, runMigrations } from '@openrun/db';
 import { createApp } from './app.js';
 import { createAuth } from './auth.js';
+import { resetDemo } from './demo/reset.js';
 import { loadConfig } from './config.js';
 import { Notifier, webPushSender } from './push.js';
 import { startScheduler } from './scheduler.js';
@@ -13,6 +14,13 @@ const migrated = runMigrations(db, config.migrationsDir);
 if (migrated) {
   console.log(
     `Applied ${migrated} database update${migrated === 1 ? '' : 's'}`,
+  );
+}
+
+if (config.demo) {
+  await resetDemo(db, config);
+  console.log(
+    'Demo mode: sample data loaded; it resets every night at 04:00 UTC',
   );
 }
 

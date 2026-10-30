@@ -44,6 +44,12 @@ const envSchema = z.object({
    */
   INTERVALS_CLIENT_ID: z.string().optional(),
   INTERVALS_CLIENT_SECRET: z.string().optional(),
+  /**
+   * A public demo: seeded with sample data on start and every night, with a
+   * shared login and sign-ups, uploads and account changes turned off.
+   * Everything in the database is replaced.
+   */
+  DEMO_MODE: bool.default(false),
   /** Web Push keys. Generated and kept in DATA_DIR if not set. */
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
@@ -94,10 +100,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     weatherUrl: e.WEATHER_URL.trim() || null,
     intervalsUrl,
     /** Null when members have to paste an API key instead. */
+    // Off on the demo, where everyone shares one login.
     intervalsOAuth:
-      intervalsUrl && intervalsClientId && intervalsClientSecret
+      !e.DEMO_MODE && intervalsUrl && intervalsClientId && intervalsClientSecret
         ? { clientId: intervalsClientId, clientSecret: intervalsClientSecret }
         : null,
+    demo: e.DEMO_MODE,
     vapidKeys:
       e.VAPID_PUBLIC_KEY && e.VAPID_PRIVATE_KEY
         ? { publicKey: e.VAPID_PUBLIC_KEY, privateKey: e.VAPID_PRIVATE_KEY }

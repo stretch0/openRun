@@ -23,7 +23,7 @@ export function fitRun({
   subSport = 0,
   withSession = true,
   start = START,
-}: RunOptions = {}): Uint8Array {
+}: RunOptions = {}): Uint8Array<ArrayBuffer> {
   const enc = new FitEncoder();
   const ts = (offsetS: number) =>
     FitEncoder.toFitTimestamp(new Date(start.getTime() + offsetS * 1000));
@@ -95,7 +95,8 @@ export function fitRun({
       u16(22, 10),
     ]);
   }
-  return enc.close();
+  // Copied so it is backed by a plain ArrayBuffer, which File and Blob need.
+  return new Uint8Array(enc.close());
 }
 
 /** A GPX run with Garmin TrackPointExtension heart rate and cadence. */

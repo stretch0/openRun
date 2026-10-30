@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { useMe } from '../lib/queries';
+import { useInstance, useMe } from '../lib/queries';
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>
   `flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium ${
@@ -8,11 +8,17 @@ const tabClass = ({ isActive }: { isActive: boolean }) =>
 
 export function Layout() {
   const { data: me } = useMe();
+  const { data: instance } = useInstance();
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col">
       <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-stone-200 bg-stone-50/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur dark:border-stone-800 dark:bg-stone-950/90">
         <img src="/favicon.svg" alt="" className="h-7 w-7" />
         <span className="text-lg font-semibold">openRun</span>
+        {instance?.demo && (
+          <span className="ml-auto rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-500">
+            Demo · resets nightly
+          </span>
+        )}
       </header>
       <main className="flex-1 space-y-4 px-4 py-4 pb-24">
         <Outlet />

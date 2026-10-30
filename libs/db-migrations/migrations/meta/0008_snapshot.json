@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "935c0d89-63f0-423c-8c25-d6faae57f267",
+  "id": "75ff1472-b7c5-4bd5-a690-79a569e2effc",
   "prevId": "e24a64bf-128f-456d-914a-f02e4c36d20d",
   "tables": {
     "account": {
@@ -1432,6 +1432,13 @@
           "autoincrement": false,
           "default": false
         },
+        "logo_version": {
+          "name": "logo_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "created_by": {
           "name": "created_by",
           "type": "text",
@@ -2819,14 +2826,6 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "auth_method": {
-          "name": "auth_method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'api_key'"
         },
         "sync_from": {
           "name": "sync_from",

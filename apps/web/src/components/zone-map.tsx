@@ -35,7 +35,9 @@ export default function ZoneMap({
   const map = useRef<MapLibreMap | null>(null);
   const [loaded, setLoaded] = useState(false);
   const pick = useRef(onPick);
-  pick.current = onPick;
+  useEffect(() => {
+    pick.current = onPick;
+  });
 
   useEffect(() => {
     if (!container.current) return;

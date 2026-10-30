@@ -282,7 +282,12 @@ function Connected({
   const update = useUpdateIntervals();
   const disconnect = useDisconnectIntervals();
   const [syncFrom, setSyncFrom] = useState(connection.syncFrom);
-  useEffect(() => setSyncFrom(connection.syncFrom), [connection.syncFrom]);
+  // Follow the saved date when it changes elsewhere (another device, a sync).
+  const [saved, setSaved] = useState(connection.syncFrom);
+  if (saved !== connection.syncFrom) {
+    setSaved(connection.syncFrom);
+    setSyncFrom(connection.syncFrom);
+  }
   const syncing = sync.isPending || connection.syncing;
   const latest = connection.syncs[0];
 
