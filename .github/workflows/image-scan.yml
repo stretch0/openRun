@@ -1,0 +1,75 @@
+name: Image scan
+
+# Scans the Docker image for known vulnerabilities (mostly in the base image's
+# OS packages, which npm audits never see) and the Dockerfile and compose file
+# for risky settings. Not a required check: base image fixes often lag, so a
+# finding may have nothing to upgrade to yet.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - Dockerfile
+      - docker-compose.yml
+      - docker-entrypoint.sh
+      - package-lock.json
+      - .github/workflows/image-scan.yml
+  schedule:
+    # Weekly, to catch vulnerabilities found since the last change.
+    - cron: '41 5 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Scan image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    # Pull requests from forks can't upload results; they still get the table.
+    env:
+      UPLOAD: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Build the image
+        run: docker build -t openrun:scan .
+
+      - name: Scan the image for vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: openrun:scan
+          format: sarif
+          output: image.sarif
+          severity: MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: true
+      - name: Scan the Dockerfile and compose file
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: sarif
+          output: config.sarif
+          skip-setup-trivy: true
+      - if: env.UPLOAD == 'true'
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: image.sarif
+          category: trivy-image
+      - if: env.UPLOAD == 'true'
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: config.sarif
+          category: trivy-config
+
+      # Turns the job red for high and critical findings that have a fix.
+      - name: Fail on fixable high or critical vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: openrun:scan
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          skip-setup-trivy: true
