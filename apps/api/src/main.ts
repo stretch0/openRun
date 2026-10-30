@@ -9,7 +9,12 @@ import { version } from './version.js';
 
 const config = loadConfig();
 const db = createDb(config.databasePath);
-runMigrations(db, config.migrationsDir);
+const migrated = runMigrations(db, config.migrationsDir);
+if (migrated) {
+  console.log(
+    `Applied ${migrated} database update${migrated === 1 ? '' : 's'}`,
+  );
+}
 
 const auth = createAuth(db, config);
 const notifier = new Notifier(db, webPushSender(config));

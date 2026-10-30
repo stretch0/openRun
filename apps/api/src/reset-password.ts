@@ -13,6 +13,7 @@ import { hashPassword } from 'better-auth/crypto';
 import { and, eq } from 'drizzle-orm';
 import { createDb, schema } from '@openrun/db';
 import { loadConfig } from './config.js';
+import { dropRoot } from './drop-root.js';
 
 export async function resetPassword(
   db: ReturnType<typeof createDb>,
@@ -52,6 +53,7 @@ export async function resetPassword(
 }
 
 async function main() {
+  dropRoot();
   const email = process.argv[2];
   if (!email || email.startsWith('-')) {
     console.error('Usage: node reset-password.js <email>');

@@ -23,17 +23,17 @@ Read first, in this order: `CLAUDE.md`, `docs/ARCHITECTURE.md`, `ROADMAP.md`, `R
 
 ## What exists (M0)
 
-| Path                                               | What                                                                                                                                                                                               |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/api`                                         | Hono server. See the API notes below.                                                                                                                                                              |
-| `apps/web`                                         | React PWA. See the web notes below.                                                                                                                                                                |
-| `apps/web-e2e`                                     | Playwright tests against the production build. See the testing section.                                                                                                                            |
-| `libs/db`                                          | Drizzle schema in `src/schema/{auth,runs,columns}.ts`, plus `createDb()` and `runMigrations()` in `src/client.ts`                                                                                  |
-| `libs/db-migrations`                               | `migrations/0000_init.sql` and `drizzle.config.ts`. Targets: `generate`, `check` (`scripts/check.mjs`, fails on schema drift), `migrate`, `test` (applies all migrations to an in-memory database) |
-| `libs/schemas`                                     | Zod contract shared by the API and web: `me`, `updateMe`, `instanceInfo`, `invite`, `createInvite`                                                                                                 |
-| `libs/domain`                                      | Pure maths in `units.ts`: pace, distance and duration formatting                                                                                                                                   |
-| `Dockerfile`, `docker-compose.yml`, `.env.example` | Image build and self-hosting setup                                                                                                                                                                 |
-| `.github/workflows/ci.yml`, `docker.yml`           | CI (`nx affected` for check, lint, typecheck, test, build and e2e) and multi-arch publish to GHCR. **Never run on GitHub yet.**                                                                    |
+| Path                                               | What                                                                                                                                                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/api`                                         | Hono server. See the API notes below.                                                                                                                                                                  |
+| `apps/web`                                         | React PWA. See the web notes below.                                                                                                                                                                    |
+| `apps/web-e2e`                                     | Playwright tests against the production build. See the testing section.                                                                                                                                |
+| `libs/db`                                          | Drizzle schema in `src/schema/{auth,runs,columns}.ts`, plus `createDb()` and `runMigrations()` in `src/client.ts`                                                                                      |
+| `libs/db-migrations`                               | `migrations/0000_init.sql` and `drizzle.config.ts`. Targets: `generate`, `check` (`scripts/check.mjs`, fails on schema drift), `migrate`, `test` (applies all migrations to an in-memory database)     |
+| `libs/schemas`                                     | Zod contract shared by the API and web: `me`, `updateMe`, `instanceInfo`, `invite`, `createInvite`                                                                                                     |
+| `libs/domain`                                      | Pure maths in `units.ts`: pace, distance and duration formatting                                                                                                                                       |
+| `Dockerfile`, `docker-compose.yml`, `.env.example` | Image build and self-hosting setup                                                                                                                                                                     |
+| `.github/workflows/ci.yml`, `docker.yml`           | CI (`nx affected` for check, lint, typecheck, test, build and e2e) and multi-arch publish to GHCR on every push to `main` and on `v*` tags. The package must be public for the README install to work. |
 
 **API (`apps/api`)**
 
@@ -101,7 +101,7 @@ Schema change workflow:
 - Lint, typecheck, test, build and check pass for all 7 projects.
 - Unit and API tests: 11 passing.
 - E2E: 3 passing.
-- The Docker image was built and run locally. Migrations ran on boot, the SPA and service worker were served, data persisted across a restart, and it runs as the non-root `node` user.
+- The Docker image was built and run locally. Migrations ran on boot, the SPA and service worker were served, data persisted across a restart, and it runs as the non-root `node` user. The container starts as root only so `docker-entrypoint.sh` can hand a root-owned `/data` (Docker creates a missing bind-mounted folder as root on Linux) to `node`; it then drops root with `setpriv`. `backup.js` and `reset-password.js` drop root too (`apps/api/src/drop-root.ts`), because `docker compose exec` runs as root.
 
 ## Gotchas found the hard way
 
@@ -122,8 +122,7 @@ Schema change workflow:
 ## Known gaps and TODO
 
 - **Never exercised for real:**
-  - The CI and Docker publish workflows have never run on GitHub.
-  - The arm64 image has never been built.
+  - The arm64 image is built by CI but has never been run.
   - Passkey registration and sign-in have never been tested in a real browser; e2e only covers password sign-in.
 - **Image size:** runtime node_modules is about 250MB uncompressed and could be trimmed.
 - **Deferred from the plan:**

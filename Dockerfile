@@ -26,11 +26,13 @@ WORKDIR /app
 COPY --from=build /src/apps/api/dist/ ./
 COPY --from=build /src/apps/web/dist ./web
 COPY --from=build /src/libs/db-migrations/migrations ./migrations
+COPY docker-entrypoint.sh /usr/local/bin/openrun-entrypoint
 
+# Starts as root only to fix the data folder's owner; see docker-entrypoint.sh.
 RUN mkdir -p /data && chown node:node /data
-USER node
 VOLUME /data
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD node -e "fetch('http://localhost:'+process.env.PORT+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+ENTRYPOINT ["openrun-entrypoint"]
 CMD ["node", "main.js"]

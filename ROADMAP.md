@@ -52,8 +52,9 @@ Through intervals.icu; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) → Inte
 ### Release v0.1
 
 - ✅ Handing over a club to another member
-- Push notifications checked on real phones
-- Clean install from the Docker image, upgrades from older databases, a backup and restore guide
+- ✅ Push notifications checked on a real phone
+- ✅ Clean install from the Docker image, upgrades from older databases, a backup and restore guide
+- Make the published image public on GitHub
 - Tag v0.1.0
 
 ## After v0.1

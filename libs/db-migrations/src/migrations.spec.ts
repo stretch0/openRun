@@ -10,9 +10,9 @@ const migrationsFolder = fileURLToPath(
 describe('db', () => {
   it('applies migrations and enforces foreign keys', () => {
     const db = createDb(':memory:');
-    runMigrations(db, migrationsFolder);
+    expect(runMigrations(db, migrationsFolder)).toBeGreaterThan(0);
     // Running again is a no-op.
-    runMigrations(db, migrationsFolder);
+    expect(runMigrations(db, migrationsFolder)).toBe(0);
 
     const [u] = db
       .insert(user)

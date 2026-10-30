@@ -8,15 +8,15 @@ Your runs are yours: they're private unless you choose to share them, and clubs 
 
 ## Features
 
-|                                                                                | Status       |
-| ------------------------------------------------------------------------------ | ------------ |
-| Accounts with passkeys or password, first user becomes admin, invite-only mode | ✅           |
-| Installable PWA (works offline from cache, update prompt)                      | ✅           |
-| Single Docker image with SQLite, migrations applied on start                   | ✅           |
-| Run log: FIT/GPX import, maps, splits, PBs, shoes, stats, export               | ✅           |
-| Privacy: private by default, sharing settings, privacy zones                   | ✅           |
-| Run clubs: repeating runs, RSVPs, coffee orders, weather, reminders            | ✅           |
-| Watch sync via intervals.icu (Garmin, Coros, Polar, Suunto, Wahoo)             | ✅           |
+|                                                                                | Status |
+| ------------------------------------------------------------------------------ | ------ |
+| Accounts with passkeys or password, first user becomes admin, invite-only mode | ✅     |
+| Installable PWA (works offline from cache, update prompt)                      | ✅     |
+| Single Docker image with SQLite, migrations applied on start                   | ✅     |
+| Run log: FIT/GPX import, maps, splits, PBs, shoes, stats, export               | ✅     |
+| Privacy: private by default, sharing settings, privacy zones                   | ✅     |
+| Run clubs: repeating runs, RSVPs, coffee orders, weather, reminders            | ✅     |
+| Watch sync via intervals.icu (Garmin, Coros, Polar, Suunto, Wahoo)             | ✅     |
 
 ## Self-hosting with Docker
 
@@ -31,9 +31,62 @@ Set `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `ORIGIN` (the URL peopl
 docker compose up -d
 ```
 
-Open the URL. The first account you create becomes the admin. Everything is stored in `./data`, so back up that folder.
+Open the URL. The first account you create becomes the admin. Everything is stored in `./data` (see [Backups](#backups)).
 
 Passkeys need HTTPS (or `localhost`), so put openRun behind a reverse proxy such as Caddy or Traefik for anything beyond local use. When you do, set `TRUST_PROXY=true`. All settings are listed in [.env.example](.env.example).
+
+### Upgrading
+
+Back up first, then:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Database changes are applied when openRun starts; `docker compose logs openrun` shows how many. There's no way back to an older version except restoring the backup you made before upgrading. `latest` follows every change on `main`; to upgrade only when you choose, pin a release in `docker-compose.yml` (for example `ghcr.io/stretch0/openrun:0.1`).
+
+### Backups
+
+Everything lives in two places: the `./data` folder and your `.env`. Keep `.env` safe as well, because `BETTER_AUTH_SECRET` signs everyone's sessions and encrypts their intervals.icu keys. A database restored without it works, but everyone has to sign in and paste their intervals.icu key again.
+
+`./data` holds:
+
+| Path                                  | What it is                                                                |
+| ------------------------------------- | ------------------------------------------------------------------------- |
+| `openrun.db` (plus `-wal` and `-shm`) | The database: accounts, runs, clubs, settings                             |
+| `files/`                              | Original FIT and GPX files                                                |
+| `vapid.json`                          | Push notification keys (losing them means everyone turns pushes on again) |
+| `backups/`                            | Copies made by `backup.js`                                                |
+
+The simplest backup is to stop openRun, copy the folder and start it again:
+
+```bash
+docker compose stop
+tar czf openrun-$(date +%F).tar.gz data .env
+docker compose start
+```
+
+To back up without stopping, copy the database with the built-in command first (copying `openrun.db` itself while openRun runs can miss recent changes), then archive the folder:
+
+```bash
+docker compose exec openrun node backup.js
+tar czf openrun-$(date +%F).tar.gz --exclude='data/openrun.db*' data .env
+```
+
+The archive then holds the database copy from `data/backups/`. Delete old copies from `data/backups/` now and then.
+
+To restore, stop openRun, unpack the archive, and if it came from `backup.js`, put that copy in place as `openrun.db`:
+
+```bash
+docker compose stop
+tar xzf openrun-2026-10-30.tar.gz
+rm -f data/openrun.db-wal data/openrun.db-shm
+cp data/backups/openrun-2026-10-30T0915.db data/openrun.db   # only for backup.js copies
+docker compose start
+```
+
+A backup from an older version is upgraded when openRun starts.
 
 ### Forgotten passwords
 
