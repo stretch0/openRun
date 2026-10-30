@@ -30,7 +30,12 @@ COPY --from=build /src/libs/db-migrations/migrations ./migrations
 COPY docker-entrypoint.sh /usr/local/bin/openrun-entrypoint
 
 # Starts as root only to fix the data folder's owner; see docker-entrypoint.sh.
-RUN mkdir -p /data && chown node:node /data
+# npm, corepack and yarn come with the base image but nothing runs them here,
+# and their own dependencies were most of the image's vulnerability reports.
+RUN mkdir -p /data && chown node:node /data \
+  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+    /opt/yarn-* /usr/local/bin/yarn /usr/local/bin/yarnpkg
 VOLUME /data
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
