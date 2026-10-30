@@ -7,3 +7,4 @@
 data
 .env
 *.db
+data-demo

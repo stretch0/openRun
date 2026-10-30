@@ -59,3 +59,6 @@ vitest.config.*.timestamp*
 .vitest
 
 test-output
+
+# Sample data from DEMO_MODE (see CONTRIBUTING.md)
+/data-demo

@@ -49,3 +49,5 @@ node scripts/screenshots.mjs http://localhost:3000
 ```
 
 It needs Playwright's Chromium (`npx playwright install chromium`), or set `CHROMIUM_PATH`.
+
+The repository's social preview card comes from the same screenshots. After retaking them, run `node scripts/social-preview.mjs` and upload `docs/images/social-preview.png` under Settings → General → Social preview (GitHub has no API for it).

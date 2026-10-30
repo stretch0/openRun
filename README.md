@@ -152,6 +152,8 @@ PORT=3005 npm run dev
 
 The repo is an [Nx](https://nx.dev) monorepo. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how it fits together.
 
+Want to help? See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Licence
 
 [AGPL-3.0-or-later](LICENSE). If you run a modified openRun for other people, you must share your changes.
