@@ -4,7 +4,7 @@
 # The full image includes python3, make and g++ for building better-sqlite3
 # when no prebuilt binary matches the platform.
 # Pinned by digest; Dependabot proposes updates.
-FROM node:22-bookworm@sha256:18a6d90fd60542269850c80ca03b29b1d9b14d6b221ac7ee8e35b0d33ef904bd AS build
+FROM node:25-bookworm@sha256:78839ac448c23517f8eab2e8f7943d9b4f73979eb7f8bed2c73dbf72ff869e7b AS build
 WORKDIR /src
 ENV NX_DAEMON=false NX_NO_CLOUD=true NX_SKIP_NX_CACHE=true
 COPY . .
@@ -15,7 +15,7 @@ RUN npx nx run-many -t build -p web && npx nx run api:prune
 RUN cd apps/api/dist && npm ci --omit=dev --omit=peer
 
 # ---- Runtime: production dependencies, the bundle, the PWA and migrations ----
-FROM node:22-bookworm-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da
+FROM node:25-bookworm-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370
 ARG OPENRUN_VERSION=dev
 ENV NODE_ENV=production \
     PORT=3000 \
