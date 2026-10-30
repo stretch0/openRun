@@ -59,6 +59,12 @@ import {
   me,
   notFound,
 } from './helpers.js';
+import {
+  logoRoutes,
+  logoUrl,
+  previewLogoUrl,
+  removeClubFiles,
+} from './logo.js';
 import { noticeJoinRequest, noticeRunChange } from './notices.js';
 import { ensureUpcomingRuns, syncFutureRuns } from './runs.js';
 import { listShares } from './shares.js';
@@ -109,6 +115,7 @@ function toSummary(c: Ctx, club: ClubRow, m: Membership): ClubSummary {
   return {
     id: club.id,
     name: club.name,
+    logoUrl: logoUrl(club),
     description: club.description,
     timezone: club.timezone,
     role: m.role,
@@ -261,6 +268,7 @@ function toRunDetail(
   return {
     ...toRuns(c, [run])[0],
     clubName: club.name,
+    clubLogoUrl: logoUrl(club),
     timezone: club.timezone,
     canManage: canManage(m),
     attendees,
@@ -339,6 +347,7 @@ export const clubRoutes = new Hono<AuthedEnv>()
     const preview: ClubPreview = {
       id: club.id,
       name: club.name,
+      logoUrl: previewLogoUrl(club),
       description: club.description,
       memberCount: memberCount(c, club.id),
       requireApproval: club.requireApproval,
@@ -402,6 +411,7 @@ export const clubRoutes = new Hono<AuthedEnv>()
       return c.json({ error: 'Only the owner can delete the club' }, 403);
     }
     c.get('db').delete(schema.club).where(eq(schema.club.id, club.id)).run();
+    removeClubFiles(c.get('config').dataDir, club.id);
     return c.body(null, 204);
   })
   .post('/:id/transfer', zValidator('json', transferClubSchema), (c) => {
@@ -885,4 +895,5 @@ export const clubRoutes = new Hono<AuthedEnv>()
     });
     return c.json(toRunDetail(c, club, run, m));
   })
-  .route('/', coffeeRoutes);
+  .route('/', coffeeRoutes)
+  .route('/', logoRoutes);

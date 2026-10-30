@@ -57,6 +57,13 @@
       "when": 1793302977984,
       "tag": "0007_intervals_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793369136922,
+      "tag": "0008_club_logo",
+      "breakpoints": true
     }
   ]
 }
