@@ -31,7 +31,7 @@ export default defineConfig(() => ({
         name: 'openRun',
         short_name: 'openRun',
         description: 'Self-hosted running log, training plans and run clubs.',
-        theme_color: '#ea580c',
+        theme_color: '#0d9488',
         background_color: '#0c0a09',
         display: 'standalone',
         start_url: '/',

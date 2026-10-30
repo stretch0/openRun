@@ -11,7 +11,7 @@ import {
 
 /**
  * A map for placing a privacy zone: tap to set the centre. Existing zones
- * are drawn in grey and the new one in orange. Loaded lazily.
+ * are drawn in grey and the new one in the brand colour. Loaded lazily.
  */
 export default function ZoneMap({
   centre,

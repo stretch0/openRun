@@ -5,10 +5,10 @@ import type { Total } from '@openrun/schemas';
 // (dark to light) so the busiest days still read as the strongest.
 const LEVELS = [
   'bg-stone-200 dark:bg-stone-800',
-  'bg-orange-200 dark:bg-orange-900',
-  'bg-orange-400 dark:bg-orange-700',
-  'bg-orange-600 dark:bg-orange-500',
-  'bg-orange-800 dark:bg-orange-300',
+  'bg-teal-200 dark:bg-teal-900',
+  'bg-teal-400 dark:bg-teal-700',
+  'bg-teal-600 dark:bg-teal-500',
+  'bg-teal-800 dark:bg-teal-300',
 ];
 
 const DAY_LABELS = ['Mon', '', 'Wed', '', 'Fri', '', ''];
