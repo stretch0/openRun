@@ -16,7 +16,7 @@ setWorkerUrl(workerUrl);
 
 export { type GeoJSONSource, LngLatBounds, MapLibreMap, NavigationControl };
 
-export const BRAND = '#ea580c';
+export const BRAND = '#0d9488';
 
 /** OpenStreetMap raster tiles; no API key needed. */
 export const OSM_STYLE: StyleSpecification = {
