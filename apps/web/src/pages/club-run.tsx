@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { Attendee, ClubRunDetail, RunCoffee } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
+import { ClubLogo } from '../components/club-logo';
 import { RsvpButtons } from '../components/club-run-card';
 import { CoffeePicker, describeOrder } from '../components/coffee';
 import { SharedRuns } from '../components/shared-runs';
@@ -37,8 +38,16 @@ export function ClubRunPage() {
   return (
     <>
       <div>
-        <Link to={`/clubs/${r.clubId}`} className="text-sm text-brand-600">
-          ← {r.clubName}
+        <Link
+          to={`/clubs/${r.clubId}`}
+          className="inline-flex items-center gap-1.5 text-sm text-brand-600"
+        >
+          ←{' '}
+          <ClubLogo
+            club={{ id: r.clubId, name: r.clubName, logoUrl: r.clubLogoUrl }}
+            size="sm"
+          />
+          {r.clubName}
         </Link>
         <h1
           className={`mt-1 text-2xl font-semibold ${cancelled ? 'line-through' : ''}`}

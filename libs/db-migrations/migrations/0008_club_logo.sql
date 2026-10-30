@@ -1,0 +1,1 @@
+ALTER TABLE `club` ADD `logo_version` integer;

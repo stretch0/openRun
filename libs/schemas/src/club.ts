@@ -104,9 +104,13 @@ const nextRunSchema = z.object({
   startsAt: z.iso.datetime(),
 });
 
+/** The club's uploaded logo, or null to show the generated one. */
+const logoUrlSchema = z.string().nullable();
+
 export const clubSummarySchema = z.object({
   id: z.string(),
   name: z.string(),
+  logoUrl: logoUrlSchema,
   description: z.string().nullable(),
   timezone: z.string(),
   role: clubRoleSchema,
@@ -149,6 +153,7 @@ export type UpdateClub = z.infer<typeof updateClubSchema>;
 export const clubPreviewSchema = z.object({
   id: z.string(),
   name: z.string(),
+  logoUrl: logoUrlSchema,
   description: z.string().nullable(),
   memberCount: z.number(),
   requireApproval: z.boolean(),
@@ -231,6 +236,7 @@ export type ClubShare = z.infer<typeof clubShareSchema>;
 
 export const clubRunDetailSchema = clubRunSchema.extend({
   clubName: z.string(),
+  clubLogoUrl: logoUrlSchema,
   timezone: z.string(),
   canManage: z.boolean(),
   attendees: z.array(attendeeSchema),
@@ -288,9 +294,14 @@ export type ClubHighlights = z.infer<typeof clubHighlightsSchema>;
 export const shareTargetSchema = z.object({
   clubId: z.string(),
   clubName: z.string(),
+  clubLogoUrl: logoUrlSchema,
   shareLevel: shareLevelSchema,
   shared: z.boolean(),
   /** Whether a share includes the route (level and privacy settings allow). */
   withMap: z.boolean(),
 });
 export type ShareTarget = z.infer<typeof shareTargetSchema>;
+
+/** What uploading or removing a club logo returns. */
+export const clubLogoSchema = z.object({ logoUrl: logoUrlSchema });
+export type ClubLogo = z.infer<typeof clubLogoSchema>;

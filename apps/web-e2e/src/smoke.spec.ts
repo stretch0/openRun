@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
+import sharp from 'sharp';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -310,7 +311,28 @@ test.describe('clubs', () => {
     await page.getByRole('button', { name: 'Add', exact: true }).click();
     await expect(page.getByText('Milk: Whole, Oat')).toBeVisible();
 
+    // Initials until there's a logo; a landscape PNG comes back square.
+    const logo = page.locator('section', { hasText: 'Upload logo' });
+    await expect(logo.getByTestId('club-initials')).toHaveText('PR');
+    await logo.locator('input[type=file]').setInputFiles({
+      name: 'logo.png',
+      mimeType: 'image/png',
+      buffer: await sharp({
+        create: { width: 300, height: 150, channels: 3, background: '#2563eb' },
+      })
+        .png()
+        .toBuffer(),
+    });
+    await expect(
+      page.getByRole('button', { name: 'Remove logo' }),
+    ).toBeVisible();
+    await expect(page.getByTestId('club-logo')).toHaveJSProperty(
+      'naturalWidth',
+      256,
+    );
+
     await page.getByRole('link', { name: '← Parkside Runners' }).click();
+    await expect(page.getByTestId('club-logo')).toBeVisible();
     const code = (
       await page
         .locator('section', { hasText: 'Invite people' })
@@ -336,6 +358,7 @@ test.describe('clubs', () => {
     await expect(bea.getByRole('heading', { name: /Hi Bea/ })).toBeVisible();
     await bea.goto(`/clubs/join/${code}`);
     await expect(bea.getByText(/Your runs stay private/)).toBeVisible();
+    await expect(bea.getByTestId('club-logo')).toBeVisible();
     await bea.getByRole('button', { name: 'Join Parkside Runners' }).click();
     await bea
       .getByRole('article')
@@ -429,6 +452,13 @@ test.describe('clubs', () => {
     await expect(
       page.getByRole('button', { name: 'Delete club' }),
     ).toBeHidden();
+
+    // As an organiser Ada can still remove the logo; the initials come back.
+    page.once('dialog', (d) => d.accept());
+    await page.getByRole('button', { name: 'Remove logo' }).click();
+    await expect(page.getByTestId('club-initials')).toHaveText('PR');
+    await page.goto('/clubs');
+    await expect(page.getByTestId('club-initials')).toHaveText('PR');
   });
 
   test('syncs runs from intervals.icu', async ({ page }) => {

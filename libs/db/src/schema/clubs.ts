@@ -43,6 +43,11 @@ export const club = sqliteTable('club', {
   requireApproval: integer('require_approval', { mode: 'boolean' })
     .notNull()
     .default(false),
+  /**
+   * Bumped each time an organiser uploads a logo, so its URL changes; null
+   * when there's none. The file is DATA_DIR/clubs/<id>/logo.webp.
+   */
+  logoVersion: integer('logo_version'),
   createdBy: text('created_by').references(() => user.id, {
     onDelete: 'set null',
   }),

@@ -1,15 +1,17 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import sharp from 'sharp';
 import {
   type ClubRun,
   type ClubSummary,
+  clubLogoSchema,
   clubPreviewSchema,
   clubRunDetailSchema,
   clubSchema,
   locationSchema,
   seriesSchema,
 } from '@openrun/schemas';
-import { type App, get, send, setup, signUp } from '../test-utils.js';
+import { type App, get, origin, send, setup, signUp } from '../test-utils.js';
 
 async function createClub(app: App, cookie: string, extra: object = {}) {
   const res = await send(app, cookie, 'POST', '/api/clubs', {
@@ -423,6 +425,176 @@ describe('clubs', () => {
       },
     );
     expect(res.status).toBe(400);
+  });
+});
+
+function image(format: 'png' | 'jpeg' | 'webp' | 'gif', width = 400) {
+  return sharp({
+    create: { width, height: 200, channels: 3, background: '#3366cc' },
+  })
+    .toFormat(format)
+    .toBuffer();
+}
+
+function uploadLogo(
+  app: App,
+  cookie: string,
+  clubId: string,
+  bytes: Uint8Array,
+  name = 'logo.png',
+) {
+  const form = new FormData();
+  form.append('logo', new File([bytes], name));
+  return app.request(`/api/clubs/${clubId}/logo`, {
+    method: 'PUT',
+    headers: { cookie, origin },
+    body: form,
+  });
+}
+
+describe('club logos', () => {
+  it('lets organisers upload, replace and remove a square logo', async () => {
+    const { app, config } = setup();
+    const owner = await signUp(app, 'owner@example.com');
+    const ann = await signUp(app, 'ann@example.com');
+    const club = await createClub(app, owner.cookie);
+    expect(club.logoUrl).toBeNull();
+    await send(app, ann.cookie, 'POST', '/api/clubs/join', {
+      code: club.joinCode,
+    });
+
+    // A plain member can't; once Ann is an organiser she can.
+    expect(
+      (await uploadLogo(app, ann.cookie, club.id, await image('png'))).status,
+    ).toBe(403);
+    const annId = clubSchema
+      .parse(
+        await (await get(app, `/api/clubs/${club.id}`, owner.cookie)).json(),
+      )
+      .members.find((m) => m.name === 'ann')?.userId;
+    const promote = await send(
+      app,
+      owner.cookie,
+      'PATCH',
+      `/api/clubs/${club.id}/members/${annId}`,
+      { role: 'organiser' },
+    );
+    expect(promote.status).toBe(200);
+    const res = await uploadLogo(app, ann.cookie, club.id, await image('png'));
+    expect(res.status).toBe(200);
+    const { logoUrl } = clubLogoSchema.parse(await res.json());
+    expect(logoUrl).toMatch(
+      new RegExp(`^/api/clubs/${club.id}/logo\\?v=\\d+$`),
+    );
+
+    // Stored under DATA_DIR as a 256 px WebP square, whatever was uploaded.
+    const stored = join(config.dataDir, 'clubs', club.id, 'logo.webp');
+    expect(existsSync(stored)).toBe(true);
+    const served = await get(app, logoUrl as string, owner.cookie);
+    expect(served.status).toBe(200);
+    expect(served.headers.get('content-type')).toBe('image/webp');
+    const meta = await sharp(
+      Buffer.from(await served.arrayBuffer()),
+    ).metadata();
+    expect(meta).toMatchObject({ format: 'webp', width: 256, height: 256 });
+
+    // Everywhere the club appears gets the URL.
+    const list = (await (
+      await get(app, '/api/clubs', owner.cookie)
+    ).json()) as ClubSummary[];
+    expect(list[0].logoUrl).toBe(logoUrl);
+
+    // Replacing changes the URL, so caches never show the old one.
+    const replaced = clubLogoSchema.parse(
+      await (
+        await uploadLogo(
+          app,
+          owner.cookie,
+          club.id,
+          await image('jpeg'),
+          'x.jpg',
+        )
+      ).json(),
+    );
+    expect(replaced.logoUrl).not.toBe(logoUrl);
+
+    const removed = await send(
+      app,
+      ann.cookie,
+      'DELETE',
+      `/api/clubs/${club.id}/logo`,
+    );
+    expect(clubLogoSchema.parse(await removed.json()).logoUrl).toBeNull();
+    expect(existsSync(stored)).toBe(false);
+    expect((await get(app, logoUrl as string, owner.cookie)).status).toBe(404);
+  });
+
+  it('checks the bytes, not the name, and caps the size', async () => {
+    const { app } = setup();
+    const owner = await signUp(app, 'owner@example.com');
+    const club = await createClub(app, owner.cookie);
+    const upload = (bytes: Uint8Array, name?: string) =>
+      uploadLogo(app, owner.cookie, club.id, bytes, name);
+
+    expect((await upload(await image('webp'), 'logo.webp')).status).toBe(200);
+    // A JPEG called .png is fine; text called .png and a GIF are not.
+    expect((await upload(await image('jpeg'), 'logo.png')).status).toBe(200);
+    expect(
+      (await upload(new TextEncoder().encode('<svg></svg>'), 'logo.png'))
+        .status,
+    ).toBe(415);
+    expect((await upload(await image('gif'), 'logo.gif')).status).toBe(415);
+    // Looks like a PNG, isn't one.
+    const fake = new Uint8Array(64);
+    fake.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    expect((await upload(fake)).status).toBe(400);
+    const huge = new Uint8Array(2 * 1024 * 1024 + 1);
+    huge.set(await image('png'));
+    expect((await upload(huge)).status).toBe(413);
+  });
+
+  it('shows the logo to members and invitees only', async () => {
+    const { app, config } = setup();
+    const owner = await signUp(app, 'owner@example.com');
+    const bob = await signUp(app, 'bob@example.com');
+    const eve = await signUp(app, 'eve@example.com');
+    const club = await createClub(app, owner.cookie, { requireApproval: true });
+    const { logoUrl } = clubLogoSchema.parse(
+      await (
+        await uploadLogo(app, owner.cookie, club.id, await image('png'))
+      ).json(),
+    );
+
+    // Not a member: nothing, not even that there's a logo.
+    expect((await get(app, logoUrl as string, eve.cookie)).status).toBe(404);
+    expect((await get(app, logoUrl as string)).status).toBe(401);
+
+    // The invite page shows it to anyone with the link.
+    const preview = clubPreviewSchema.parse(
+      await (
+        await get(app, `/api/clubs/preview/${club.joinCode}`, eve.cookie)
+      ).json(),
+    );
+    expect(preview.logoUrl).toMatch(/^\/api\/clubs\/preview\//);
+    expect((await get(app, preview.logoUrl as string, eve.cookie)).status).toBe(
+      200,
+    );
+
+    // Someone waiting for approval sees it in their club list.
+    await send(app, bob.cookie, 'POST', '/api/clubs/join', {
+      code: club.joinCode,
+    });
+    expect((await get(app, logoUrl as string, bob.cookie)).status).toBe(200);
+
+    // A new join code stops the old invite link showing it.
+    await send(app, owner.cookie, 'POST', `/api/clubs/${club.id}/join-code`);
+    expect((await get(app, preview.logoUrl as string, eve.cookie)).status).toBe(
+      404,
+    );
+
+    // Deleting the club deletes the file.
+    await send(app, owner.cookie, 'DELETE', `/api/clubs/${club.id}`);
+    expect(existsSync(join(config.dataDir, 'clubs', club.id))).toBe(false);
   });
 });
 
