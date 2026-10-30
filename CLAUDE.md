@@ -1,11 +1,11 @@
 # openRun
 
-Self-hosted running app (run log, training plans, run clubs, Garmin sync, MCP). Read `docs/ARCHITECTURE.md` first; `ROADMAP.md` has the milestones.
+Self-hosted running app (run log, run clubs, watch sync). Read `docs/ARCHITECTURE.md` first; `ROADMAP.md` has the milestones.
 
 ## Project conventions
 
 - Shared request/response shapes go in `libs/schemas` (Zod) and are used by both `apps/api` and `apps/web`.
-- Pure logic (maths, plan generation, recurrence) goes in `libs/domain` with unit tests, not in routes or components.
+- Pure logic (maths, recurrence, highlights) goes in `libs/domain` with unit tests, not in routes or components.
 - Schema changes: edit `libs/db/src/schema`, then run `npx nx run db-migrations:generate --name=<description>` and commit the generated SQL. Never hand-edit or change released migrations. `npx nx run db-migrations:check` must pass.
 - Relative imports in Node/TS libs use `.js` extensions (`nodenext`).
 - E2E tests run against the production build; locally pass `CHROMIUM_PATH` if Playwright's bundled browser isn't installed.

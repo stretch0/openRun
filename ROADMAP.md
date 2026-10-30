@@ -49,18 +49,19 @@ Through intervals.icu; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) → Inte
 - ✅ Sync now, sync log, clear messages when the key stops working or a run came via Strava
 - ✅ Garmin attribution on runs recorded with Garmin devices
 
-### M4 – Plans and AI
+### Release v0.1
 
-- Plan builder (goal race, date, current mileage, days available) and training calendar
-- Matching planned workouts to completed runs
-- Sending planned workouts to the intervals.icu calendar, which puts them on Garmin (and other) watches
-- MCP server at `/mcp` (Streamable HTTP) with personal access tokens
+- Handing over a club to another member
+- Push notifications checked on real phones
+- Clean install from the Docker image, upgrades from older databases, a backup and restore guide
+- Tag v0.1.0
 
 ## After v0.1
 
 - Federation: keep your log on your own instance and join clubs hosted elsewhere ([docs/PRIVACY.md](docs/PRIVACY.md), phase 3)
 - Optional end-to-end encryption of GPS tracks and original files (phase 4)
 
+- Training plans and an MCP server, only in a form the existing Garmin MCP servers don't cover (they already build plans, put workouts on the watch and read runs). For example a club training block everyone follows, or showing the plan an MCP puts on the intervals.icu calendar next to your runs
 - In-app AI coach with your own provider (Anthropic, OpenAI, OpenAI-compatible such as Ollama). Changes are proposed, approved and can be undone.
 - Capacitor apps for iOS and Android
 - Postgres option, OIDC sign-in

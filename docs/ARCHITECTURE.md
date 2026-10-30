@@ -8,7 +8,6 @@ openRun ships as **one Docker image**. A Node API built with [Hono](https://hono
 browser / installed PWA ──► api (Hono, Node 22) ──► SQLite (/data)
                               ├─ /api/auth/*   Better Auth (password, passkeys)
                               ├─ /api/*        app routes
-                              ├─ /mcp          MCP server (M4)
                               └─ /*            built PWA (apps/web/dist)
 ```
 
@@ -25,7 +24,7 @@ browser / installed PWA ──► api (Hono, Node 22) ──► SQLite (/data)
 | `libs/domain`         | Pure, unit-tested running logic: units, streams, splits, best efforts                 |
 | `libs/activity-files` | FIT and GPX parsing into one device-neutral activity shape (Node only)                |
 
-Planned libs: `mcp` (tool definitions) and `ui`. Sync lives in `apps/api/src/integrations` (see Integrations below).
+Planned libs: `ui`. Sync lives in `apps/api/src/integrations` (see Integrations below).
 
 Libraries are not buildable. They export TypeScript source, and the consuming app's bundler compiles it.
 
@@ -78,7 +77,6 @@ The rules are in [PRIVACY.md](PRIVACY.md). How they're implemented:
 - The first account becomes `admin` (`FIRST_USER_ADMIN`).
 - With `INVITE_ONLY=true`, sign-up needs an unused, unexpired invite code. If the invite has an email, the address must match. Admins create invites in the app.
 - Better Auth rate-limits by client IP. Unless `TRUST_PROXY` is set, the API overwrites `X-Forwarded-For` with the socket address so clients can't spoof it.
-- MCP clients (M4) will use hashed personal access tokens (`api_token` table) with read or write scope.
 
 ## Notifications and the scheduler
 
@@ -114,6 +112,6 @@ How it works (`apps/api/src/integrations`):
 - **Garmin attribution:** intervals.icu's API terms require crediting Garmin on data from Garmin devices. `activity.device` holds e.g. "Garmin Forerunner 265" (built from `device_name`, prefixed with "Garmin" for `GARMIN_CONNECT` activities) and is shown on the feed, the run page and club shares (copied into `club_share.device`).
 - `INTERVALS_URL` points at intervals.icu; empty turns sync off. Tests stub `fetch`; e2e runs `apps/web-e2e/fake-intervals.mjs`.
 
-Later: pushing planned workouts to the intervals.icu calendar, which sends them on to Garmin (M4); OAuth and webhooks instead of polling, if openRun registers as an intervals.icu app.
+Later: pushing planned workouts to the intervals.icu calendar, which sends them on to Garmin; OAuth and webhooks instead of polling, if openRun registers as an intervals.icu app.
 
 - **Weather:** Open-Meteo. **Maps:** MapLibre with OSM tiles. Neither needs an API key.

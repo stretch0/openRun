@@ -128,7 +128,7 @@ If people still want protection from their own host, encrypt `activity_stream` a
 
 - **New milestone before M2:** "Privacy controls" (phase 1). It replaces the planned in-app password reset.
 - **M2 (run clubs):** built as described in phase 2. The data model above replaces the draft in `HANDOVER.md` where they differ, mainly shares and sharing levels.
-- **M3 (sync) and M4 (plans and MCP):** M3 syncs through intervals.icu (above). They run on the runner's own instance, which is the point.
+- **M3 (sync):** syncs through intervals.icu (above). It runs on the runner's own instance, which is the point.
 - **After v0.1:** federation (phase 3), then optional end-to-end encryption (phase 4).
 
 ## Decisions on the open questions
