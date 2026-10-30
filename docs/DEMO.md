@@ -3,7 +3,7 @@
 `DEMO_MODE=true` turns an instance into a public demo. On every start, and every night at 04:00 UTC, it:
 
 1. Empties the database and the `files/` and `clubs/` folders under `DATA_DIR`.
-2. Seeds sample data through the API (`apps/api/src/demo/seed.ts`): Sam, a runner with 26 weeks of runs around Regent's Park, two pairs of shoes and a privacy zone, plus a run club with six other members, weekly runs, RSVPs and coffee orders. The dates follow the day it runs, so the demo always looks current. Seeding takes about 15 seconds (longer on a small machine); the server answers once it's done.
+2. Seeds sample data through the API (`apps/api/src/demo/seed.ts`): Sam, a runner with 26 weeks of runs around Regent's Park, two pairs of shoes and a privacy zone, plus a run club with six other members, weekly runs, RSVPs and coffee orders. The dates follow the day it runs, so the demo always looks current. Seeding takes about 15 seconds on a laptop and about a minute on Fly's smallest shared CPU; the server answers once it's done.
 
 Visitors sign in as Sam with **Try the demo** on the sign-in page. Everyone shares that login, so demo mode turns off anything that would change the login, let a visitor keep a foothold, or host their files:
 
@@ -36,7 +36,7 @@ fly tokens create deploy -a openrun-demo | gh secret set FLY_API_TOKEN -R stretc
 Keep it to **one machine, always on**:
 
 - Each machine has its own database, so two machines would show visitors different demos and lose their sign-in as requests move between them.
-- A stopped machine would seed again when it wakes, which takes about 15 seconds and resets the demo in the middle of someone's visit.
+- A stopped machine would seed again when it wakes, which takes about a minute and resets the demo in the middle of someone's visit.
 
 ## README screenshots
 

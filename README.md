@@ -10,6 +10,8 @@ An open-source, self-hosted running app: log your runs, sync from your watch, an
 
 Your runs are yours: they're private unless you choose to share them, and clubs only ever see what you send them. Run it for yourself, or for friends and family who trust you with their data. It's inspired by [openGym](https://github.com/DuarteSantos8/openGym).
 
+**Try it:** [openrun-demo.fly.dev](https://openrun-demo.fly.dev) signs you in as Sam, a runner in a run club. It resets every night.
+
 > **Status: early development.** Accounts, the run log, stats, privacy controls, run clubs and watch sync work. v0.1 is out ([release notes](https://github.com/stretch0/openRun/releases/tag/v0.1.0)). See [ROADMAP.md](ROADMAP.md).
 
 <table>
