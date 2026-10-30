@@ -5,10 +5,11 @@ import type { ActivitySummary, Me } from '@openrun/schemas';
 import { useActivityList, usePersonalBests } from '../lib/activities';
 import { SPORT_LABELS, formatDate, pbLabel } from '../lib/format';
 import { authClient } from '../lib/auth-client';
-import { useMe } from '../lib/queries';
+import { useInstance, useMe } from '../lib/queries';
 
 export function HomePage() {
   const { data: me } = useMe();
+  const { data: instance } = useInstance();
   const list = useActivityList();
   const activities = list.data?.pages.flatMap((p) => p.items) ?? [];
 
@@ -25,7 +26,7 @@ export function HomePage() {
         </Link>
       </div>
 
-      <PasskeyPrompt />
+      {!instance?.demo && <PasskeyPrompt />}
 
       <PersonalBests me={me} />
 

@@ -36,6 +36,16 @@ export function LoginPage() {
     else await signedIn();
   };
 
+  const onDemo = async () => {
+    if (!instance?.demo) return;
+    setBusy(true);
+    setError(null);
+    const { error } = await authClient.signIn.email(instance.demo);
+    setBusy(false);
+    if (error) setError(authErrorMessage(error, 'Could not sign in'));
+    else await signedIn();
+  };
+
   const onPasskey = async () => {
     setError(null);
     const result = await authClient.signIn.passkey();
@@ -47,10 +57,50 @@ export function LoginPage() {
   return (
     <AuthCard title={`Sign in to ${instance?.name ?? 'openRun'}`}>
       <FormError message={error} />
+      {instance?.demo ? (
+        <div className="space-y-3">
+          <p className="text-sm text-stone-600 dark:text-stone-400">
+            This is a demo. Sign in as Sam, a runner in a run club, and look
+            around. Everyone shares this login, and it all resets every night.
+          </p>
+          <button
+            type="button"
+            className="btn-primary w-full"
+            onClick={onDemo}
+            disabled={busy}
+          >
+            Try the demo
+          </button>
+        </div>
+      ) : (
+        <DefaultSignIn
+          passwordLogin={instance?.passwordLogin !== false}
+          busy={busy}
+          onPasskey={onPasskey}
+          onSubmit={onSubmit}
+        />
+      )}
+    </AuthCard>
+  );
+}
+
+function DefaultSignIn({
+  passwordLogin,
+  busy,
+  onPasskey,
+  onSubmit,
+}: {
+  passwordLogin: boolean;
+  busy: boolean;
+  onPasskey: () => void;
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+}) {
+  return (
+    <>
       <button type="button" className="btn-primary w-full" onClick={onPasskey}>
         Sign in with a passkey
       </button>
-      {instance?.passwordLogin !== false && (
+      {passwordLogin && (
         <>
           <div className="flex items-center gap-3 text-xs uppercase text-stone-400">
             <span className="h-px flex-1 bg-stone-200 dark:bg-stone-800" />
@@ -96,6 +146,6 @@ export function LoginPage() {
           Create an account
         </Link>
       </p>
-    </AuthCard>
+    </>
   );
 }

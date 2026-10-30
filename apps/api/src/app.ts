@@ -8,6 +8,7 @@ import type { Db } from '@openrun/db';
 import type { Auth } from './auth.js';
 import type { Config } from './config.js';
 import type { AppEnv } from './context.js';
+import { demoLimits } from './demo/limits.js';
 import { Notifier } from './push.js';
 import { activityRoutes, personalBestRoutes } from './routes/activities.js';
 import { clubRoutes } from './clubs/routes.js';
@@ -46,6 +47,8 @@ export function createApp({
     c.set('notifier', notifier);
     await next();
   });
+
+  if (config.demo) app.use('/api/*', demoLimits);
 
   app.on(['GET', 'POST'], '/api/auth/*', (c) =>
     auth.handler(withClientIp(c.req.raw, config.trustProxy ? null : c)),

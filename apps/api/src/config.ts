@@ -37,6 +37,12 @@ const envSchema = z.object({
   WEATHER_URL: z.string().default('https://api.open-meteo.com/v1/forecast'),
   /** intervals.icu, for syncing runs from watches. Empty turns it off. */
   INTERVALS_URL: z.string().default('https://intervals.icu'),
+  /**
+   * A public demo: seeded with sample data on start and every night, with a
+   * shared login and sign-ups, uploads and account changes turned off.
+   * Everything in the database is replaced.
+   */
+  DEMO_MODE: bool.default(false),
   /** Web Push keys. Generated and kept in DATA_DIR if not set. */
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
@@ -83,6 +89,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     placeSearchUrl: e.PLACE_SEARCH_URL.trim() || null,
     weatherUrl: e.WEATHER_URL.trim() || null,
     intervalsUrl: e.INTERVALS_URL.trim().replace(/\/+$/, '') || null,
+    demo: e.DEMO_MODE,
     vapidKeys:
       e.VAPID_PUBLIC_KEY && e.VAPID_PRIVATE_KEY
         ? { publicKey: e.VAPID_PUBLIC_KEY, privateKey: e.VAPID_PRIVATE_KEY }

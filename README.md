@@ -12,6 +12,15 @@ Your runs are yours: they're private unless you choose to share them, and clubs 
 
 > **Status: early development.** Accounts, the run log, stats, privacy controls, run clubs and watch sync work. v0.1 is out ([release notes](https://github.com/stretch0/openRun/releases/tag/v0.1.0)). See [ROADMAP.md](ROADMAP.md).
 
+<table>
+  <tr>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/runs-dark.png"><img src="docs/images/runs-light.png" alt="The run log: personal bests and recent runs" width="200"></picture></td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/run-dark.png"><img src="docs/images/run-light.png" alt="A run: the route on a map, with pace, heart rate and elevation charts" width="200"></picture></td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/club-dark.png"><img src="docs/images/club-light.png" alt="A run club with its upcoming runs, RSVPs and weather" width="200"></picture></td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/club-run-dark.png"><img src="docs/images/club-run-light.png" alt="A club run: meeting point, forecast, RSVP and the coffee order" width="200"></picture></td>
+  </tr>
+</table>
+
 ## Features
 
 |                                                                                | Status |
@@ -39,7 +48,7 @@ docker compose up -d
 
 Open the URL. The first account you create becomes the admin. Everything is stored in `./data` (see [Backups](#backups)).
 
-Passkeys need HTTPS (or `localhost`), so put openRun behind a reverse proxy such as Caddy or Traefik for anything beyond local use. When you do, set `TRUST_PROXY=true`. All settings are listed in [.env.example](.env.example).
+Passkeys need HTTPS (or `localhost`), so put openRun behind a reverse proxy such as Caddy or Traefik for anything beyond local use. When you do, set `TRUST_PROXY=true`. All settings are listed in [.env.example](.env.example). To run a public demo with sample data instead, see [docs/DEMO.md](docs/DEMO.md).
 
 ### Upgrading
 
