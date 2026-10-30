@@ -1,5 +1,11 @@
 # openRun
 
+[![CI](https://github.com/stretch0/openRun/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/stretch0/openRun/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/stretch0/openRun/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/stretch0/openRun/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/stretch0/openRun/badge)](https://scorecard.dev/viewer/?uri=github.com/stretch0/openRun)
+[![Latest release](https://img.shields.io/github/v/release/stretch0/openRun)](https://github.com/stretch0/openRun/releases/latest)
+[![Licence: AGPL-3.0](https://img.shields.io/github/license/stretch0/openRun)](LICENSE)
+
 An open-source, self-hosted running app: log your runs, sync from your watch, and organise your run club (including the coffee order).
 
 Your runs are yours: they're private unless you choose to share them, and clubs only ever see what you send them. Run it for yourself, or for friends and family who trust you with their data. It's inspired by [openGym](https://github.com/DuarteSantos8/openGym).
