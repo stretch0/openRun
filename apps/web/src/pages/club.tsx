@@ -116,7 +116,7 @@ function UpcomingRuns({
   timeZone: string;
 }) {
   const [all, setAll] = useState(false);
-  const weekAhead = Date.now() + 7 * 86_400_000;
+  const [weekAhead] = useState(() => Date.now() + 7 * 86_400_000);
   const soon = Math.max(
     1,
     runs.filter((r) => Date.parse(r.startsAt) < weekAhead).length,
