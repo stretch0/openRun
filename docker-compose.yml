@@ -6,5 +6,9 @@ services:
     ports:
       - '${PORT:-3000}:3000'
     env_file: .env
+    environment:
+      # PORT in .env picks the port on this machine; inside the container
+      # openRun always listens on 3000.
+      PORT: 3000
     volumes:
       - ./data:/data

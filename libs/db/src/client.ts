@@ -18,9 +18,24 @@ export function createDb(path: string) {
 }
 
 /**
- * Applies any pending migrations from `migrationsFolder`.
- * Idempotent: applied migrations are tracked in `__drizzle_migrations`.
+ * Applies any pending migrations from `migrationsFolder` and returns how many
+ * it applied. Idempotent: applied migrations are tracked in
+ * `__drizzle_migrations`.
  */
-export function runMigrations(db: Db, migrationsFolder: string) {
+export function runMigrations(db: Db, migrationsFolder: string): number {
+  const applied = () => {
+    const table = db.$client
+      .prepare(
+        "select 1 from sqlite_master where type = 'table' and name = '__drizzle_migrations'",
+      )
+      .get();
+    if (!table) return 0;
+    const row = db.$client
+      .prepare('select count(*) as n from __drizzle_migrations')
+      .get() as { n: number };
+    return row.n;
+  };
+  const before = applied();
   migrate(db, { migrationsFolder });
+  return applied() - before;
 }

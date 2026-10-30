@@ -31,7 +31,8 @@
           },
           "thirdParty": false,
           "additionalEntryPoints": [
-            "apps/api/src/reset-password.ts"
+            "apps/api/src/reset-password.ts",
+            "apps/api/src/backup.ts"
           ]
         },
         "configurations": {
