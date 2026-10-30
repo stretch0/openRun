@@ -121,6 +121,7 @@
     "fast-xml-parser": "*",
     "fit-file-parser": "*",
     "hono": "*",
+    "sharp": "*",
     "web-push": "*",
     "zod": "*"
   },
