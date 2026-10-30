@@ -13,6 +13,14 @@ updates:
     cooldown:
       default-days: 14
     open-pull-requests-limit: 5
+    ignore:
+      # ESLint 10 waits for eslint-plugin-react, which crashes on it (used by
+      # Nx's React lint config). Remove once this ships:
+      # https://github.com/jsx-eslint/eslint-plugin-react/issues/3977
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
+      - dependency-name: '@eslint/js'
+        update-types: [version-update:semver-major]
     groups:
       # Nx's packages only work at the same version, majors included. Listed
       # first, so they never land in the group below.
