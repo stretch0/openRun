@@ -442,9 +442,11 @@ function uploadLogo(
   clubId: string,
   bytes: Uint8Array,
   name = 'logo.png',
+  fields: Record<string, string> = {},
 ) {
   const form = new FormData();
   form.append('logo', new File([bytes], name));
+  for (const [key, value] of Object.entries(fields)) form.append(key, value);
   return app.request(`/api/clubs/${clubId}/logo`, {
     method: 'PUT',
     headers: { cookie, origin },
@@ -551,6 +553,84 @@ describe('club logos', () => {
     const huge = new Uint8Array(2 * 1024 * 1024 + 1);
     huge.set(await image('png'));
     expect((await upload(huge)).status).toBe(413);
+  });
+
+  it('keeps the chosen area, or fits the whole image', async () => {
+    const { app, config } = setup();
+    const owner = await signUp(app, 'ann@example.com');
+    const club = await createClub(app, owner.cookie);
+    // A wordmark-shaped image: red on the left half, blue on the right.
+    const wide = await sharp({
+      create: { width: 400, height: 200, channels: 3, background: '#ff0000' },
+    })
+      .composite([
+        {
+          input: {
+            create: {
+              width: 200,
+              height: 200,
+              channels: 3,
+              background: '#0000ff',
+            },
+          },
+          left: 200,
+          top: 0,
+        },
+      ])
+      .png()
+      .toBuffer();
+    const stored = join(config.dataDir, 'clubs', club.id, 'logo.webp');
+    /** The colour at a point, as fractions across and down the square. */
+    const pixel = async (x: number, y: number) => {
+      const { data, info } = await sharp(readFileSync(stored))
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      const at =
+        (Math.floor(y * (info.height - 1)) * info.width +
+          Math.floor(x * (info.width - 1))) *
+        4;
+      return [...data.subarray(at, at + 4)];
+    };
+    const red = (p: number[]) => p[0] > 200 && p[2] < 50 && p[3] > 200;
+    const blue = (p: number[]) => p[2] > 200 && p[0] < 50 && p[3] > 200;
+
+    // Nothing chosen: the middle square, half red, half blue.
+    await uploadLogo(app, owner.cookie, club.id, wide);
+    expect(red(await pixel(0.1, 0.5))).toBe(true);
+    expect(blue(await pixel(0.9, 0.5))).toBe(true);
+
+    // The right-hand square only.
+    const right = await uploadLogo(app, owner.cookie, club.id, wide, 'l.png', {
+      fit: 'fill',
+      x: '0.5',
+      y: '0',
+      width: '0.5',
+      height: '1',
+    });
+    expect(right.status).toBe(200);
+    expect(blue(await pixel(0.1, 0.5))).toBe(true);
+    expect(blue(await pixel(0.9, 0.5))).toBe(true);
+
+    // The whole image, padded above and below with transparency.
+    await uploadLogo(app, owner.cookie, club.id, wide, 'l.png', {
+      fit: 'whole',
+    });
+    expect(red(await pixel(0.1, 0.5))).toBe(true);
+    expect(blue(await pixel(0.9, 0.5))).toBe(true);
+    expect((await pixel(0.5, 0.05))[3]).toBe(0);
+    expect((await pixel(0.5, 0.95))[3]).toBe(0);
+
+    // An area outside the image is refused, and the logo is left as it was.
+    const bad = await uploadLogo(app, owner.cookie, club.id, wide, 'l.png', {
+      fit: 'fill',
+      x: '1.5',
+      y: '0',
+      width: '0',
+      height: '1',
+    });
+    expect(bad.status).toBe(400);
+    expect((await pixel(0.5, 0.05))[3]).toBe(0);
   });
 
   it('shows the logo to members and invitees only', async () => {

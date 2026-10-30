@@ -302,6 +302,26 @@ export const shareTargetSchema = z.object({
 });
 export type ShareTarget = z.infer<typeof shareTargetSchema>;
 
+const fraction = z.coerce.number().min(0).max(1);
+
+/**
+ * How an uploaded logo becomes a square, sent as form fields next to the
+ * file. `fill` keeps the chosen area, as fractions of the upright image;
+ * `whole` shrinks the whole image to fit and pads the rest. Without either
+ * the middle square is kept.
+ */
+export const logoPlacementSchema = z.discriminatedUnion('fit', [
+  z.object({
+    fit: z.literal('fill'),
+    x: fraction,
+    y: fraction,
+    width: fraction.refine((n) => n > 0),
+    height: fraction.refine((n) => n > 0),
+  }),
+  z.object({ fit: z.literal('whole') }),
+]);
+export type LogoPlacement = z.infer<typeof logoPlacementSchema>;
+
 /** What uploading or removing a club logo returns. */
 export const clubLogoSchema = z.object({ logoUrl: logoUrlSchema });
 export type ClubLogo = z.infer<typeof clubLogoSchema>;

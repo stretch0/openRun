@@ -5,6 +5,7 @@ import {
   type CreateClubRun,
   type CreateLocation,
   type CreateMenuItem,
+  type LogoPlacement,
   type CreateSeries,
   type OrderInput,
   type RsvpInput,
@@ -124,9 +125,18 @@ export function clubApi(clubId: string) {
     update: (body: UpdateClub) => api(base, clubSchema, json('PATCH', body)),
     remove: () => api(base, z.undefined(), json('DELETE')),
     newCode: () => api(`${base}/join-code`, clubSchema, json('POST')),
-    uploadLogo: (file: File) => {
+    uploadLogo: ({
+      file,
+      placement,
+    }: {
+      file: File;
+      placement: LogoPlacement;
+    }) => {
       const body = new FormData();
       body.append('logo', file);
+      for (const [key, value] of Object.entries(placement)) {
+        body.append(key, String(value));
+      }
       return api(`${base}/logo`, clubLogoSchema, { method: 'PUT', body });
     },
     removeLogo: () => api(`${base}/logo`, clubLogoSchema, json('DELETE')),

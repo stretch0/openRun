@@ -311,8 +311,11 @@ test.describe('clubs', () => {
     await page.getByRole('button', { name: 'Add', exact: true }).click();
     await expect(page.getByText('Milk: Whole, Oat')).toBeVisible();
 
-    // Initials until there's a logo; a landscape PNG comes back square.
-    const logo = page.locator('section', { hasText: 'Upload logo' });
+    // Initials until there's a logo; a landscape PNG comes back square,
+    // after choosing how it fits.
+    const logo = page.locator('section', {
+      has: page.getByRole('heading', { name: 'Logo', exact: true }),
+    });
     await expect(logo.getByTestId('club-initials')).toHaveText('PR');
     await logo.locator('input[type=file]').setInputFiles({
       name: 'logo.png',
@@ -323,6 +326,12 @@ test.describe('clubs', () => {
         .png()
         .toBuffer(),
     });
+    const picker = logo.getByRole('group', { name: 'New logo' });
+    await expect(picker.getByLabel('Zoom')).toBeVisible();
+    await picker.getByLabel('Fit whole image').check();
+    await expect(picker.getByLabel('Zoom')).toBeHidden();
+    await picker.getByRole('button', { name: 'Save logo' }).click();
+    await expect(picker).toBeHidden();
     await expect(
       page.getByRole('button', { name: 'Remove logo' }),
     ).toBeVisible();

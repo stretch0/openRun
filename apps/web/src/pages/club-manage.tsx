@@ -14,6 +14,7 @@ import { usePlaceSearch } from '../lib/places';
 import { useInstance, useMe } from '../lib/queries';
 
 const PointMap = lazy(() => import('../components/zone-map'));
+const LogoPicker = lazy(() => import('../components/logo-picker'));
 
 const DAY_LABELS: Record<(typeof WEEKDAYS)[number], string> = {
   MO: 'Mon',
@@ -945,7 +946,15 @@ function Logo({ club }: { club: Club }) {
   const upload = useClubMutation(clubApi(club.id).uploadLogo);
   const remove = useClubMutation(clubApi(club.id).removeLogo);
   const [tooBig, setTooBig] = useState(false);
+  /** The picked image, shown in the picker until it's saved or cancelled. */
+  const [picked, setPicked] = useState<{ file: File; url: string } | null>(
+    null,
+  );
   const busy = upload.isPending || remove.isPending;
+  const closePicker = () => {
+    if (picked) URL.revokeObjectURL(picked.url);
+    setPicked(null);
+  };
   return (
     <section className="card space-y-3">
       <h2 className="font-semibold">Logo</h2>
@@ -955,7 +964,8 @@ function Logo({ club }: { club: Club }) {
           {club.logoUrl
             ? 'Shown on your club page, invites and members’ club lists.'
             : `Until you upload one, ${club.name} gets its initials on a colour of its own.`}{' '}
-          PNG, JPEG or WebP up to {MAX_LOGO_MB} MB. It's cropped to a square.
+          PNG, JPEG or WebP up to {MAX_LOGO_MB} MB. You choose how it fits the
+          square before it's saved.
         </p>
       </div>
       <FormError
@@ -965,42 +975,56 @@ function Logo({ club }: { club: Club }) {
             : (upload.error?.message ?? remove.error?.message)
         }
       />
-      <div className="flex flex-wrap gap-2">
-        <label
-          className={`btn-secondary cursor-pointer ${busy ? 'pointer-events-none opacity-50' : ''}`}
-        >
-          {upload.isPending
-            ? 'Uploading…'
-            : club.logoUrl
-              ? 'Replace logo'
-              : 'Upload logo'}
-          <input
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            className="sr-only"
-            disabled={busy}
-            onChange={(e) => {
-              const file = e.currentTarget.files?.[0];
-              e.currentTarget.value = '';
-              if (!file) return;
-              setTooBig(file.size > MAX_LOGO_MB * 1024 * 1024);
-              if (file.size <= MAX_LOGO_MB * 1024 * 1024) upload.mutate(file);
-            }}
+      {picked ? (
+        <Suspense fallback={<p className="text-sm text-stone-500">Loading…</p>}>
+          <LogoPicker
+            imageUrl={picked.url}
+            saving={upload.isPending}
+            onCancel={closePicker}
+            onSave={(placement) =>
+              upload.mutate(
+                { file: picked.file, placement },
+                { onSuccess: closePicker },
+              )
+            }
           />
-        </label>
-        {club.logoUrl && (
-          <button
-            type="button"
-            className="btn-secondary"
-            disabled={busy}
-            onClick={() => {
-              if (window.confirm('Remove the logo?')) remove.mutate();
-            }}
+        </Suspense>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <label
+            className={`btn-secondary cursor-pointer ${busy ? 'pointer-events-none opacity-50' : ''}`}
           >
-            Remove logo
-          </button>
-        )}
-      </div>
+            {club.logoUrl ? 'Replace logo' : 'Upload logo'}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="sr-only"
+              disabled={busy}
+              onChange={(e) => {
+                const file = e.currentTarget.files?.[0];
+                e.currentTarget.value = '';
+                if (!file) return;
+                const big = file.size > MAX_LOGO_MB * 1024 * 1024;
+                setTooBig(big);
+                upload.reset();
+                if (!big) setPicked({ file, url: URL.createObjectURL(file) });
+              }}
+            />
+          </label>
+          {club.logoUrl && (
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={busy}
+              onClick={() => {
+                if (window.confirm('Remove the logo?')) remove.mutate();
+              }}
+            >
+              Remove logo
+            </button>
+          )}
+        </div>
+      )}
     </section>
   );
 }

@@ -5,7 +5,11 @@ import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import sharp from 'sharp';
 import { schema } from '@openrun/db';
-import type { ClubLogo } from '@openrun/schemas';
+import {
+  type ClubLogo,
+  type LogoPlacement,
+  logoPlacementSchema,
+} from '@openrun/schemas';
 import type { AuthedEnv } from '../context.js';
 import { safePath, writeDataFile } from '../data-files.js';
 import { canManage } from './access.js';
@@ -48,13 +52,51 @@ export function sniffImageType(bytes: Uint8Array) {
   return null;
 }
 
-/** Turned upright, cropped to the middle square and shrunk, as WebP. */
-export async function squareLogo(bytes: Uint8Array) {
-  return sharp(bytes, { limitInputPixels: MAX_INPUT_PIXELS })
+/**
+ * Turned upright, made square as the placement says (the middle square
+ * without one) and shrunk, as WebP. Padding is transparent.
+ */
+export async function squareLogo(bytes: Uint8Array, placement?: LogoPlacement) {
+  // Upright first, so the chosen area matches the image the browser showed.
+  const { data, info } = await sharp(bytes, {
+    limitInputPixels: MAX_INPUT_PIXELS,
+  })
     .rotate()
-    .resize(LOGO_SIZE, LOGO_SIZE, { fit: 'cover', withoutEnlargement: false })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  let image = sharp(data, {
+    raw: { width: info.width, height: info.height, channels: info.channels },
+  });
+  if (placement?.fit === 'fill') {
+    image = image.extract(pixelArea(placement, info.width, info.height));
+  }
+  return image
+    .resize(LOGO_SIZE, LOGO_SIZE, {
+      fit: placement?.fit === 'whole' ? 'contain' : 'cover',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
     .webp({ quality: 85 })
     .toBuffer();
+}
+
+/** The chosen area in pixels, kept inside the image. */
+function pixelArea(
+  area: { x: number; y: number; width: number; height: number },
+  width: number,
+  height: number,
+) {
+  const left = Math.min(Math.round(area.x * width), width - 1);
+  const top = Math.min(Math.round(area.y * height), height - 1);
+  return {
+    left,
+    top,
+    width: Math.max(1, Math.min(Math.round(area.width * width), width - left)),
+    height: Math.max(
+      1,
+      Math.min(Math.round(area.height * height), height - top),
+    ),
+  };
 }
 
 /** Relative to DATA_DIR. */
@@ -137,9 +179,17 @@ export const logoRoutes = new Hono<AuthedEnv>()
       const m = club && me(c, club.id);
       if (!club || !m) return notFound(c);
       if (!canManage(m)) return forbidden(c);
-      const file = (await c.req.parseBody())['logo'];
+      const { logo: file, ...fields } = await c.req.parseBody();
       if (!(file instanceof File)) {
         return c.json({ error: 'No image uploaded' }, 400);
+      }
+      let placement: LogoPlacement | undefined;
+      if (fields['fit'] !== undefined) {
+        const parsed = logoPlacementSchema.safeParse(fields);
+        if (!parsed.success) {
+          return c.json({ error: 'That crop doesn’t fit the image' }, 400);
+        }
+        placement = parsed.data;
       }
       if (file.size > MAX_LOGO_BYTES) {
         return c.json({ error: 'Logos can be up to 2 MB' }, 413);
@@ -150,7 +200,7 @@ export const logoRoutes = new Hono<AuthedEnv>()
       }
       let logo: Uint8Array;
       try {
-        logo = await squareLogo(bytes);
+        logo = await squareLogo(bytes, placement);
       } catch {
         return c.json({ error: 'That image couldn’t be read' }, 400);
       }
