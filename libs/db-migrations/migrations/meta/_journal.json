@@ -50,6 +50,13 @@
       "when": 1793240248455,
       "tag": "0006_club_shares",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793302977984,
+      "tag": "0007_intervals_sync",
+      "breakpoints": true
     }
   ]
 }

@@ -97,6 +97,7 @@ function ActivityRow({
           value={formatPace(a.distanceM, a.durationS, me.units)}
         />
       </dl>
+      {a.device && <p className="mt-1 text-xs text-stone-500">{a.device}</p>}
     </Link>
   );
 }

@@ -414,6 +414,35 @@ test.describe('clubs', () => {
       highlights.getByLabel(/Celebrate me in highlights/),
     ).toBeChecked();
   });
+
+  test('syncs runs from intervals.icu', async ({ page }) => {
+    await page.goto('/settings');
+    const card = page.getByRole('region', { name: 'Sync from your watch' });
+    await card.getByLabel('intervals.icu API key').fill('wrong-key');
+    await card.getByRole('button', { name: 'Connect' }).click();
+    await expect(card.getByText(/didn't accept that API key/)).toBeVisible();
+
+    await card.getByLabel('intervals.icu API key').fill('a-good-api-key');
+    await card.getByRole('button', { name: 'Connect' }).click();
+    await expect(card.getByText('Connected to Test Runner')).toBeVisible();
+    await expect(card.getByText(/1 run imported/)).toBeVisible();
+    await card.getByText('Sync log').click();
+    await expect(card.getByText('1 new')).toBeVisible();
+
+    await page.goto('/');
+    const run = page.getByRole('link', { name: /Towpath tempo/ });
+    await expect(run.getByText('Garmin Forerunner 265')).toBeVisible();
+    await run.click();
+    await expect(
+      page.getByRole('heading', { name: 'Towpath tempo' }),
+    ).toBeVisible();
+    await expect(page.getByText(/Garmin Forerunner 265/)).toBeVisible();
+
+    await page.goto('/settings');
+    page.once('dialog', (d) => d.accept());
+    await card.getByRole('button', { name: 'Disconnect' }).click();
+    await expect(card.getByLabel('intervals.icu API key')).toBeVisible();
+  });
 });
 
 test('serves an installable PWA', async ({ page, request }) => {

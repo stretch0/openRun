@@ -11,7 +11,13 @@ import { user } from './auth.js';
 import { id, timestamp, timestamps } from './columns.js';
 import { visibilities } from './privacy.js';
 
-export const activitySources = ['manual', 'file', 'garmin', 'strava'] as const;
+export const activitySources = [
+  'manual',
+  'file',
+  'garmin',
+  'strava',
+  'intervals',
+] as const;
 export const sportTypes = [
   'run',
   'trail_run',
@@ -70,6 +76,8 @@ export const activity = sqliteTable(
     }),
     /** Path of the original FIT/GPX file inside DATA_DIR, if any. */
     originalFile: text('original_file'),
+    /** The watch that recorded it, e.g. "Garmin Forerunner 265", if known. */
+    device: text('device'),
     ...timestamps,
   },
   (t) => [

@@ -25,7 +25,7 @@ browser / installed PWA ──► api (Hono, Node 22) ──► SQLite (/data)
 | `libs/domain`         | Pure, unit-tested running logic: units, streams, splits, best efforts                 |
 | `libs/activity-files` | FIT and GPX parsing into one device-neutral activity shape (Node only)                |
 
-Planned libs: `integrations/garmin`, `integrations/strava`, `mcp` (tool definitions) and `ui`. Each integration will implement a common `ActivityProvider` / `WorkoutTarget` interface.
+Planned libs: `mcp` (tool definitions) and `ui`. Sync lives in `apps/api/src/integrations` (see Integrations below).
 
 Libraries are not buildable. They export TypeScript source, and the consuming app's bundler compiles it.
 
@@ -82,7 +82,7 @@ The rules are in [PRIVACY.md](PRIVACY.md). How they're implemented:
 
 ## Notifications and the scheduler
 
-- `apps/api/src/scheduler.ts` runs jobs inside the server with `croner`: reminders and coffee nudges every minute, weather every 30 minutes (a run's forecast refreshes when it's over 3 hours old), and runs created eight weeks ahead nightly. Each job catches its own errors. It starts in `main.ts`, not `createApp`, so tests drive the job functions directly with a fixed `now`.
+- `apps/api/src/scheduler.ts` runs jobs inside the server with `croner`: reminders and coffee nudges every minute, weather every 30 minutes (a run's forecast refreshes when it's over 3 hours old), intervals.icu sync at :10 and :40, and runs created eight weeks ahead nightly. Each job catches its own errors. It starts in `main.ts`, not `createApp`, so tests drive the job functions directly with a fixed `now`.
 - `apps/api/src/push.ts`: Web Push with VAPID keys from `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`, or generated once into `DATA_DIR/vapid.json`. `Notifier.notify(userIds, notification, key?)` sends to every subscribed device and deletes subscriptions the push service says are gone; with a `key` (e.g. `reminder:<run id>`) it claims a `notification_sent` row first, so each person gets it at most once even across restarts. Tests use a recording sender.
 - What gets sent, and to whom, lives in `apps/api/src/clubs/notices.ts`. Everything respects `notification_settings` (a missing row means the defaults) and `club_member.muted`. Reminder timing is `reminderTime()` in `libs/domain/src/reminders.ts`: by default the evening before (19:00 local) for runs starting before 10:00, otherwise two hours before. Someone who RSVPs after their reminder time isn't reminded.
 - Run changes notify people who said going or maybe, never whoever made the change: cancelling, moving, and series edits that remove a run (`syncFutureRuns` calls back before deleting, while RSVPs still exist).
@@ -97,8 +97,23 @@ The rules are in [PRIVACY.md](PRIVACY.md). How they're implemented:
 - When a new version is deployed, an in-app prompt offers a reload.
 - Hashed assets are cached forever. HTML and the service worker are always revalidated.
 
-## Integrations (planned)
+## Integrations
 
-- **Garmin:** Garmin has no public consumer API, so we use the community approach (as in `garmin-connect`), behind an adapter and marked unofficial. FIT upload and Strava are always available as alternatives.
-- **Runna:** has no API. Runna pushes workouts to the Garmin calendar, so openRun reads them from there.
+Runs come from watches through **intervals.icu**, which is an official partner of Garmin, Coros, Polar, Suunto and Wahoo and has an open API whose terms allow storing, sharing and AI use. Decided in October 2026, after ruling out:
+
+- **Garmin directly:** no public API for individuals. The unofficial sign-in sits behind Cloudflare bot checks and changed in March 2026 (garth, the library most tools used, was deprecated). Too fragile to build on.
+- **Strava:** its API Policy (June 2026) allows caching data for 7 days at most, bans storing anything derived from it, bans any AI use, bans apps that compete with Strava and needs a paid subscription. Importing into a run log breaks all of that.
+- **Apple Health / Health Connect:** need a native app (after v0.1). Garmin doesn't write GPS routes there reliably, so it would mainly suit Apple Watch and Android watches.
+
+How it works (`apps/api/src/integrations`):
+
+- A member pastes their intervals.icu API key on Settings. It's checked against `/api/v1/athlete/0`, then stored in `integration.credentials`, encrypted with AES-256-GCM under a key derived from `BETTER_AUTH_SECRET` (`apps/api/src/secrets.ts`). Changing that secret means everyone pastes their key again (`status = needs_key`). One intervals.icu account can be connected to one member.
+- `syncIntegration()` lists every activity since `sync_from` (only the fields it reads, so a year is tens of kilobytes) and downloads up to 25 new runs per sync, oldest first. It asks for the original file when it's FIT or GPX and for intervals.icu's FIT otherwise (TCX). Files go through the same import as uploads (`insertParsedActivity`) with `source = 'intervals'` and the intervals.icu id as `external_id`; a run that's already there (`findSameRun`) is marked a duplicate. The whole range is listed every time because runs reach intervals.icu late: a watch that syncs days later, or Garmin sending months of history in chunks over several hours after connecting. The list can't be filtered by when an activity arrived.
+- `integration_item` remembers every activity looked at, including runs the member later deleted, so nothing is fetched twice and deleted runs stay deleted. Activities that reached intervals.icu from Strava come back as stubs and are recorded as `unavailable`.
+- A refused key stops scheduled syncs until a new key is pasted; other errors are logged and retried next time. Two syncs of one connection never overlap. The last 20 syncs are kept for the sync log.
+- **Garmin attribution:** intervals.icu's API terms require crediting Garmin on data from Garmin devices. `activity.device` holds e.g. "Garmin Forerunner 265" (built from `device_name`, prefixed with "Garmin" for `GARMIN_CONNECT` activities) and is shown on the feed, the run page and club shares (copied into `club_share.device`).
+- `INTERVALS_URL` points at intervals.icu; empty turns sync off. Tests stub `fetch`; e2e runs `apps/web-e2e/fake-intervals.mjs`.
+
+Later: pushing planned workouts to the intervals.icu calendar, which sends them on to Garmin (M4); OAuth and webhooks instead of polling, if openRun registers as an intervals.icu app.
+
 - **Weather:** Open-Meteo. **Maps:** MapLibre with OSM tiles. Neither needs an API key.

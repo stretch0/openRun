@@ -98,6 +98,15 @@ Each club member has a **sharing level**:
 
 Inside one instance, the personal module "sends" a share by calling the club module's API. Phase 3 replaces that call with a message to another instance.
 
+### Watch sync (M3)
+
+Runs arrive through intervals.icu, which the member signs up to and connects to their watch maker themselves. openRun never sees a Garmin (or other) password.
+
+- The member's intervals.icu API key is stored encrypted, so a leaked database or backup doesn't expose it. The server needs to read it to sync while the member is away, so **whoever runs the server could use it**. It gives full access to the member's intervals.icu account, but not to their watch maker's account. The Integrations page says this before the key is pasted, names the instance's contact, and explains how to cut it off (disconnect, or make a new key on intervals.icu).
+- Imported runs are ordinary runs: private by default (or the member's default visibility), and shared only when the member chooses.
+- intervals.icu sees that this server asked for the member's activities, nothing more.
+- Garmin and Strava were not used directly. Garmin's unofficial sign-in would have meant holding members' Garmin logins; Strava's terms forbid keeping the data. See `docs/ARCHITECTURE.md` → Integrations.
+
 ### Phase 3: federation
 
 - **Identity:** `name@instance.example`. Every instance publishes a small document with its public key.
@@ -119,7 +128,7 @@ If people still want protection from their own host, encrypt `activity_stream` a
 
 - **New milestone before M2:** "Privacy controls" (phase 1). It replaces the planned in-app password reset.
 - **M2 (run clubs):** built as described in phase 2. The data model above replaces the draft in `HANDOVER.md` where they differ, mainly shares and sharing levels.
-- **M3 (sync) and M4 (plans and MCP):** unchanged. They run on the runner's own instance, which is the point.
+- **M3 (sync) and M4 (plans and MCP):** M3 syncs through intervals.icu (above). They run on the runner's own instance, which is the point.
 - **After v0.1:** federation (phase 3), then optional end-to-end encryption (phase 4).
 
 ## Decisions on the open questions

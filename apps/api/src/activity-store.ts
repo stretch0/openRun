@@ -135,6 +135,9 @@ export function insertParsedActivity(
     hash,
     originalFile,
     visibility,
+    source = 'file',
+    externalId = hash,
+    device = null,
   }: {
     id: string;
     userId: string;
@@ -143,6 +146,10 @@ export function insertParsedActivity(
     hash: string;
     originalFile: string;
     visibility: 'private' | 'clubs';
+    /** Where it came from; uploads are de-duplicated by `hash`. */
+    source?: 'file' | 'intervals';
+    externalId?: string;
+    device?: string | null;
   },
 ) {
   db.transaction((tx) => {
@@ -151,8 +158,9 @@ export function insertParsedActivity(
       .values({
         id,
         userId,
-        source: 'file',
-        externalId: hash,
+        source,
+        externalId,
+        device,
         sport: parsed.sport,
         visibility,
         name,

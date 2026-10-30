@@ -40,17 +40,20 @@ See [docs/PRIVACY.md](docs/PRIVACY.md), phase 1.
 - ✅ Sharing a run with a club as a copy (numbers, or a privacy-zoned route), withdrawable; making a run private takes it back
 - ✅ Fun attendance highlights, never speed rankings: weekly streaks, milestones, "ran in the rain", and the club's turnout and shared distance; named only if a member opts in. Saying you're going counts as turning up, so there are no check-ins
 
-### M3 – Sync
+### M3 – Sync ✅
 
-- Garmin Connect (unofficial API, behind an adapter): scheduled activity import
-- Strava OAuth import
-- Integrations settings page and sync log
+Through intervals.icu; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) → Integrations for why not Garmin or Strava directly.
+
+- ✅ Connect intervals.icu with a personal API key (checked, stored encrypted); runs from Garmin, Coros, Polar, Suunto and Wahoo arrive as their original files every 30 minutes
+- ✅ Backfill from a chosen date, a little at a time; duplicates and deleted runs are skipped
+- ✅ Sync now, sync log, clear messages when the key stops working or a run came via Strava
+- ✅ Garmin attribution on runs recorded with Garmin devices
 
 ### M4 – Plans and AI
 
 - Plan builder (goal race, date, current mileage, days available) and training calendar
 - Matching planned workouts to completed runs
-- Pushing structured workouts to the Garmin calendar; showing Runna workouts read from Garmin
+- Sending planned workouts to the intervals.icu calendar, which puts them on Garmin (and other) watches
 - MCP server at `/mcp` (Streamable HTTP) with personal access tokens
 
 ## After v0.1
@@ -61,4 +64,5 @@ See [docs/PRIVACY.md](docs/PRIVACY.md), phase 1.
 - In-app AI coach with your own provider (Anthropic, OpenAI, OpenAI-compatible such as Ollama). Changes are proposed, approved and can be undone.
 - Capacitor apps for iOS and Android
 - Postgres option, OIDC sign-in
-- More providers (Coros, Polar, intervals.icu), webhooks, ICS feed for club runs
+- Phone app reading Apple Health and Health Connect (the best route for Apple Watch and Android watches)
+- intervals.icu OAuth and webhooks instead of API keys and polling; ICS feed for club runs

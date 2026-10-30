@@ -17,6 +17,7 @@ export const activitySourceSchema = z.enum([
   'file',
   'garmin',
   'strava',
+  'intervals',
 ]);
 
 export const activitySummarySchema = z.object({
@@ -30,6 +31,8 @@ export const activitySummarySchema = z.object({
   durationS: z.number(),
   elevationGainM: z.number().nullable(),
   avgHeartRate: z.number().nullable(),
+  /** The watch that recorded it, e.g. "Garmin Forerunner 265", if known. */
+  device: z.string().nullable(),
 });
 export type ActivitySummary = z.infer<typeof activitySummarySchema>;
 

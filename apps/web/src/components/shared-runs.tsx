@@ -61,6 +61,9 @@ export function SharedRuns({
               {formatDistance(s.distanceM, units)} ·{' '}
               {formatDuration(s.durationS)} ·{' '}
               {formatPace(s.distanceM, s.durationS, units)}
+              {s.device && (
+                <span className="text-xs text-stone-500"> · {s.device}</span>
+              )}
             </p>
             {open === s.id && s.track && (
               <Suspense

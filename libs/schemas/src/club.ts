@@ -218,6 +218,8 @@ export const clubShareSchema = z.object({
   startedAt: z.iso.datetime(),
   distanceM: z.number(),
   durationS: z.number(),
+  /** The watch that recorded it, e.g. "Garmin Forerunner 265". */
+  device: z.string().nullable(),
   /** [lat, lng] with privacy zones as null; null if shared without a map. */
   track: z.array(z.tuple([z.number(), z.number()]).nullable()).nullable(),
 });
