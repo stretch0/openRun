@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { type Db, schema } from '@openrun/db';
 import type { ClubShare, ShareTarget } from '@openrun/schemas';
+import { logoUrl } from './logo.js';
 
 // Runs members share with a club. The member's side (routes/activities.ts)
 // builds a snapshot and hands it over; this module never reads run logs.
@@ -45,6 +46,7 @@ export function shareTargets(
     .select({
       clubId: schema.club.id,
       clubName: schema.club.name,
+      logoVersion: schema.club.logoVersion,
       shareLevel: schema.clubMember.shareLevel,
     })
     .from(schema.clubMember)
@@ -57,8 +59,9 @@ export function shareTargets(
     )
     .orderBy(asc(schema.club.name))
     .all()
-    .map((t) => ({
+    .map(({ logoVersion, ...t }) => ({
       ...t,
+      clubLogoUrl: logoUrl({ id: t.clubId, logoVersion }),
       shared: shared.has(t.clubId),
       withMap: mapsAllowed && t.shareLevel === 'full',
     }));

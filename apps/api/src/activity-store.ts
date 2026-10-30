@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve, sep } from 'node:path';
+import { join } from 'node:path';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { and, asc, eq, gte, lt, lte } from 'drizzle-orm';
 import type { ParsedActivity } from '@openrun/activity-files';
@@ -12,6 +11,8 @@ import {
   splits as splitStream,
 } from '@openrun/domain';
 import type { Sport } from '@openrun/schemas';
+
+export { removeDataFile, safePath, writeDataFile } from './data-files.js';
 
 type ActivityRow = typeof schema.activity.$inferSelect;
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
@@ -104,24 +105,6 @@ export function originalFilePath(
   ext: string,
 ) {
   return join('files', userId, `${activityId}${ext}`);
-}
-
-export function writeDataFile(dataDir: string, path: string, data: Uint8Array) {
-  const full = safePath(dataDir, path);
-  mkdirSync(dirname(full), { recursive: true });
-  writeFileSync(full, data);
-}
-
-export function removeDataFile(dataDir: string, path: string) {
-  rmSync(safePath(dataDir, path), { force: true });
-}
-
-/** Resolves `path` inside `dataDir`, refusing anything that escapes it. */
-export function safePath(dataDir: string, path: string) {
-  const root = resolve(dataDir);
-  const full = resolve(root, path);
-  if (!full.startsWith(root + sep)) throw new Error(`Bad data path: ${path}`);
-  return full;
 }
 
 /** Inserts a parsed file as an activity, with its laps, stream and efforts. */

@@ -15,6 +15,7 @@ import {
   visibilitySchema,
 } from '@openrun/schemas';
 import { FormError } from '../components/auth-card';
+import { ClubLogo } from '../components/club-logo';
 import { ShoeSelect } from '../components/shoe-settings';
 import { StreamCharts } from '../components/stream-charts';
 import {
@@ -458,6 +459,9 @@ function ShareWithClubs({ activity }: { activity: Activity }) {
       <ul className="divide-y divide-stone-200 text-sm dark:divide-stone-800">
         {targets.map((t) => (
           <li key={t.clubId} className="flex items-center gap-3 py-2">
+            <ClubLogo
+              club={{ id: t.clubId, name: t.clubName, logoUrl: t.clubLogoUrl }}
+            />
             <div className="min-w-0 flex-1">
               <p className="font-medium">{t.clubName}</p>
               <p className="text-stone-500">

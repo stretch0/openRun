@@ -5,6 +5,7 @@ import {
   type CreateClubRun,
   type CreateLocation,
   type CreateMenuItem,
+  type LogoPlacement,
   type CreateSeries,
   type OrderInput,
   type RsvpInput,
@@ -16,6 +17,7 @@ import {
   type UpdateSeries,
   type UsualInput,
   clubHighlightsSchema,
+  clubLogoSchema,
   clubPreviewSchema,
   clubRunDetailSchema,
   clubRunSchema,
@@ -123,6 +125,21 @@ export function clubApi(clubId: string) {
     update: (body: UpdateClub) => api(base, clubSchema, json('PATCH', body)),
     remove: () => api(base, z.undefined(), json('DELETE')),
     newCode: () => api(`${base}/join-code`, clubSchema, json('POST')),
+    uploadLogo: ({
+      file,
+      placement,
+    }: {
+      file: File;
+      placement: LogoPlacement;
+    }) => {
+      const body = new FormData();
+      body.append('logo', file);
+      for (const [key, value] of Object.entries(placement)) {
+        body.append(key, String(value));
+      }
+      return api(`${base}/logo`, clubLogoSchema, { method: 'PUT', body });
+    },
+    removeLogo: () => api(`${base}/logo`, clubLogoSchema, json('DELETE')),
     transfer: (userId: string) =>
       api(`${base}/transfer`, clubSchema, json('POST', { userId })),
     setShareLevel: (shareLevel: ShareLevel) =>

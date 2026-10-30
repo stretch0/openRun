@@ -9,8 +9,9 @@ ENV NX_DAEMON=false NX_NO_CLOUD=true NX_SKIP_NX_CACHE=true
 COPY . .
 RUN npm ci
 RUN npx nx run-many -t build -p web && npx nx run api:prune
-# Install the API's production dependencies next to its bundle.
-RUN cd apps/api/dist && npm ci --omit=dev --omit=optional --omit=peer
+# Install the API's production dependencies next to its bundle. Optional
+# dependencies stay in: they carry sharp's prebuilt libvips for this platform.
+RUN cd apps/api/dist && npm ci --omit=dev --omit=peer
 
 # ---- Runtime: production dependencies, the bundle, the PWA and migrations ----
 FROM node:22-bookworm-slim

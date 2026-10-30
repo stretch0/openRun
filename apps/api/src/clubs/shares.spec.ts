@@ -79,6 +79,7 @@ describe('sharing runs with a club', () => {
       {
         clubId: t.club.id,
         clubName: 'Parkside Runners',
+        clubLogoUrl: null,
         shareLevel: 'summaries',
         shared: true,
         withMap: false,
