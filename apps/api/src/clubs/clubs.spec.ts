@@ -136,6 +136,58 @@ describe('clubs', () => {
     );
   });
 
+  it('lets the owner hand the club to another member', async () => {
+    const { app } = setup();
+    const owner = await signUp(app, 'owner@example.com');
+    const ann = await signUp(app, 'ann@example.com');
+    const bob = await signUp(app, 'bob@example.com');
+    const outsider = await signUp(app, 'out@example.com');
+    const club = await createClub(app, owner.cookie);
+    for (const who of [ann, bob]) {
+      await send(app, who.cookie, 'POST', '/api/clubs/join', {
+        code: club.joinCode,
+      });
+    }
+    const idOf = async (email: string) => {
+      const view = clubSchema.parse(
+        await (await get(app, `/api/clubs/${club.id}`, owner.cookie)).json(),
+      );
+      return view.members.find((m) => m.name === email.split('@')[0])?.userId;
+    };
+    const annId = await idOf('ann@example.com');
+    const transfer = (cookie: string, userId: unknown) =>
+      send(app, cookie, 'POST', `/api/clubs/${club.id}/transfer`, { userId });
+
+    // Only the owner can hand it over, and only to an active member.
+    expect((await transfer(bob.cookie, annId)).status).toBe(403);
+    expect((await transfer(owner.cookie, 'nobody')).status).toBe(400);
+    expect((await transfer(outsider.cookie, annId)).status).toBe(404);
+
+    const res = await transfer(owner.cookie, annId);
+    expect(res.status).toBe(200);
+    expect(clubSchema.parse(await res.json()).role).toBe('organiser');
+    const asAnn = clubSchema.parse(
+      await (await get(app, `/api/clubs/${club.id}`, ann.cookie)).json(),
+    );
+    expect(asAnn.role).toBe('owner');
+    expect(
+      asAnn.members.filter((m) => m.role === 'owner').map((m) => m.userId),
+    ).toEqual([annId]);
+
+    // The old owner can now leave; the new one can't hand it back twice.
+    expect(
+      (
+        await send(
+          app,
+          owner.cookie,
+          'DELETE',
+          `/api/clubs/${club.id}/members/me`,
+        )
+      ).status,
+    ).toBe(204);
+    expect((await transfer(owner.cookie, annId)).status).toBe(404);
+  });
+
   it('schedules repeating runs and takes RSVPs', async () => {
     const { app } = setup();
     const owner = await signUp(app, 'owner@example.com');

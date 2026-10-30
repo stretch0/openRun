@@ -53,6 +53,7 @@ export function ClubManagePage() {
       <MeetingPoints club={club} />
       <MemberRoles club={club} />
       <Details club={club} />
+      {club.role === 'owner' && <HandOver club={club} />}
       {club.role === 'owner' && <DeleteClub club={club} />}
     </>
   );
@@ -933,6 +934,60 @@ function Details({ club }: { club: Club }) {
         </button>
       </div>
     </form>
+  );
+}
+
+function HandOver({ club }: { club: Club }) {
+  const { data: me } = useMe();
+  const transfer = useClubMutation(clubApi(club.id).transfer);
+  const [userId, setUserId] = useState('');
+  const others = club.members.filter(
+    (m) => m.status === 'active' && m.userId !== me?.id,
+  );
+  if (!others.length) return null;
+  const chosen = others.find((m) => m.userId === userId);
+  return (
+    <section className="card space-y-3">
+      <div>
+        <h2 className="font-semibold">Hand over the club</h2>
+        <p className="mt-1 text-sm text-stone-500">
+          The new owner can change roles, hand it on again or delete the club.
+          You stay on as an organiser, and can leave afterwards.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <select
+          className="input w-auto flex-1"
+          aria-label="New owner"
+          value={userId}
+          onChange={(e) => setUserId(e.target.value)}
+        >
+          <option value="">Choose a member…</option>
+          {others.map((m) => (
+            <option key={m.userId} value={m.userId}>
+              {m.name}
+            </option>
+          ))}
+        </select>
+        <button
+          className="btn-secondary"
+          disabled={!chosen || transfer.isPending}
+          onClick={() => {
+            if (
+              chosen &&
+              window.confirm(
+                `Make ${chosen.name} the owner of ${club.name}? You can't undo this yourself.`,
+              )
+            ) {
+              transfer.mutate(chosen.userId);
+            }
+          }}
+        >
+          Hand over
+        </button>
+      </div>
+      <FormError message={transfer.error?.message} />
+    </section>
   );
 }
 

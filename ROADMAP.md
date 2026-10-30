@@ -51,7 +51,7 @@ Through intervals.icu; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) → Inte
 
 ### Release v0.1
 
-- Handing over a club to another member
+- ✅ Handing over a club to another member
 - Push notifications checked on real phones
 - Clean install from the Docker image, upgrades from older databases, a backup and restore guide
 - Tag v0.1.0
