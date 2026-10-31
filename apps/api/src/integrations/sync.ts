@@ -1,4 +1,13 @@
-import { and, count, desc, eq, inArray, ne, notInArray } from 'drizzle-orm';
+import {
+  and,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  ne,
+  notInArray,
+} from 'drizzle-orm';
 import { ActivityFileError, parseActivityFile } from '@openrun/activity-files';
 import { type Db, schema } from '@openrun/db';
 import { defaultActivityName } from '@openrun/domain';
@@ -11,6 +20,7 @@ import {
   removeDataFile,
   writeDataFile,
 } from '../activity-store.js';
+import { withdrawShares } from '../clubs/shares.js';
 import type { Config } from '../config.js';
 import { getPrivacySettings } from '../privacy.js';
 import { decryptSecret } from '../secrets.js';
@@ -43,7 +53,8 @@ const day = (d: Date) => d.toISOString().slice(0, 10);
 
 /**
  * Fetches runs from intervals.icu that haven't been seen before, oldest first,
- * up to BATCH files, and imports them like uploads. Returns false if a sync
+ * up to BATCH files, and imports them like uploads. Runs that intervals.icu
+ * now lists as another sport are removed. Returns false if a sync
  * of this connection was already running.
  *
  * Everything since the start date is listed every time: runs can reach
@@ -64,7 +75,13 @@ export async function syncIntegration(
     .values({ integrationId: integration.id, startedAt: now })
     .returning()
     .all();
-  const counts = { imported: 0, duplicates: 0, failed: 0, unavailable: 0 };
+  const counts = {
+    imported: 0,
+    duplicates: 0,
+    failed: 0,
+    unavailable: 0,
+    removed: 0,
+  };
   let more = false;
   let error: string | null = null;
   let status: Integration['status'] = 'ok';
@@ -82,6 +99,8 @@ export async function syncIntegration(
       day(new Date(integration.syncFrom.getTime() - DAY_MS)),
       day(new Date(now.getTime() + DAY_MS)),
     );
+
+    counts.removed = removeNonRuns(db, config, integration, listed);
 
     const seen = seenIds(
       db,
@@ -170,6 +189,67 @@ function seenIds(db: Db, integrationId: string, ids: string[]) {
     }
   }
   return seen;
+}
+
+/**
+ * Removes runs imported earlier that intervals.icu now lists as another
+ * sport, such as a ride the watch recorded as a run. Other sports are never
+ * imported, so these go as if they'd never been runs, club shares included.
+ * Forgetting the item means that if it turns back into a run, the next sync
+ * imports it again. Runs deleted by hand stay deleted.
+ */
+function removeNonRuns(
+  db: Db,
+  config: Config,
+  integration: Integration,
+  listed: IntervalsActivity[],
+) {
+  const notRuns = listed
+    .filter((a) => a.type && !RUN_TYPES.has(a.type))
+    .map((a) => a.id);
+  let removed = 0;
+  // SQLite allows a limited number of variables per statement.
+  for (let i = 0; i < notRuns.length; i += 500) {
+    const items = db
+      .select({
+        id: schema.integrationItem.id,
+        activityId: schema.integrationItem.activityId,
+      })
+      .from(schema.integrationItem)
+      .where(
+        and(
+          eq(schema.integrationItem.integrationId, integration.id),
+          eq(schema.integrationItem.status, 'imported'),
+          isNotNull(schema.integrationItem.activityId),
+          inArray(schema.integrationItem.externalId, notRuns.slice(i, i + 500)),
+        ),
+      )
+      .all();
+    for (const item of items) {
+      const run = db
+        .select()
+        .from(schema.activity)
+        .where(
+          and(
+            eq(schema.activity.id, item.activityId ?? ''),
+            eq(schema.activity.userId, integration.userId),
+            eq(schema.activity.source, 'intervals'),
+          ),
+        )
+        .get();
+      if (!run) continue;
+      db.transaction((tx) => {
+        withdrawShares(db, run.userId, { sourceIds: [run.id] });
+        tx.delete(schema.activity).where(eq(schema.activity.id, run.id)).run();
+        tx.delete(schema.integrationItem)
+          .where(eq(schema.integrationItem.id, item.id))
+          .run();
+      });
+      if (run.originalFile) removeDataFile(config.dataDir, run.originalFile);
+      removed++;
+    }
+  }
+  return removed;
 }
 
 async function importOne(
@@ -325,6 +405,7 @@ export function describeConnection(
       duplicates: s.duplicates,
       failed: s.failed,
       unavailable: s.unavailable,
+      removed: s.removed,
       more: s.more,
       error: s.error,
     })),

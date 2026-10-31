@@ -91,6 +91,8 @@ export const integrationSync = sqliteTable(
     failed: integer('failed').notNull().default(0),
     /** Activities the provider won't hand over, e.g. ones that came from Strava. */
     unavailable: integer('unavailable').notNull().default(0),
+    /** Runs removed because the provider now lists them as another sport. */
+    removed: integer('removed').notNull().default(0),
     /** More runs are waiting; the next sync carries on. */
     more: integer('more', { mode: 'boolean' }).notNull().default(false),
     error: text('error'),

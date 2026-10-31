@@ -1,0 +1,1 @@
+ALTER TABLE `integration_sync` ADD `removed` integer DEFAULT 0 NOT NULL;
