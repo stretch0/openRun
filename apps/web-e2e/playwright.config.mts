@@ -58,6 +58,8 @@ export default defineConfig({
             PLACE_SEARCH_URL: 'http://127.0.0.1:9/search',
             WEATHER_URL: '',
             INTERVALS_URL: 'http://127.0.0.1:3109',
+            INTERVALS_CLIENT_ID: 'openrun-e2e',
+            INTERVALS_CLIENT_SECRET: 'e2e-secret',
           },
         },
       ],

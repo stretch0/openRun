@@ -10,6 +10,8 @@ import { activity } from './runs.js';
 import { id, timestamp, timestamps } from './columns.js';
 
 export const integrationProviders = ['intervals'] as const;
+/** How openRun signs in to the provider for this member. */
+export const integrationAuthMethods = ['api_key', 'oauth'] as const;
 export const integrationStatuses = ['ok', 'error', 'needs_key'] as const;
 export const integrationItemStatuses = [
   'imported',
@@ -31,8 +33,14 @@ export const integration = sqliteTable(
     /** The account's id at the provider, e.g. intervals.icu's "i12345". */
     accountId: text('account_id').notNull(),
     accountName: text('account_name'),
-    /** Encrypted with a key derived from BETTER_AUTH_SECRET. */
+    /**
+     * The API key or OAuth access token, encrypted with a key derived from
+     * BETTER_AUTH_SECRET.
+     */
     credentials: text('credentials').notNull(),
+    authMethod: text('auth_method', { enum: integrationAuthMethods })
+      .notNull()
+      .default('api_key'),
     /** Runs that started before this aren't imported. */
     syncFrom: timestamp('sync_from').notNull(),
     status: text('status', { enum: integrationStatuses })

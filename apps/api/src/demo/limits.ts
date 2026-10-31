@@ -19,7 +19,9 @@ const BLOCKED: [method: string, path: RegExp][] = [
 
 export const demoLimits = createMiddleware<AppEnv>(async (c, next) => {
   const { method, path } = c.req;
-  if (method === 'GET' || method === 'HEAD') return next();
+  // Signing in to intervals.icu starts with a GET, so it's checked too.
+  const oauth = path.startsWith('/api/integrations/intervals/oauth/');
+  if ((method === 'GET' || method === 'HEAD') && !oauth) return next();
   const blocked = path.startsWith('/api/auth/')
     ? !ALLOWED_AUTH.has(path)
     : BLOCKED.some(([m, re]) => (m === '*' || m === method) && re.test(path));

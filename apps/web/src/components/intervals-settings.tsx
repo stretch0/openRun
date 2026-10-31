@@ -1,5 +1,10 @@
-import { type FormEvent, useState } from 'react';
-import type { IntegrationSync, IntervalsConnection } from '@openrun/schemas';
+import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import type {
+  IntegrationSync,
+  IntervalsConnection,
+  IntervalsOAuthResult,
+} from '@openrun/schemas';
 import {
   useConnectIntervals,
   useDisconnectIntervals,
@@ -11,11 +16,41 @@ import { useInstance } from '../lib/queries';
 import { FormError } from './auth-card';
 
 const INTERVALS = 'https://intervals.icu';
+/** The web app navigates here; the API sends the member on to intervals.icu. */
+const OAUTH_START = '/api/integrations/intervals/oauth/start';
+
+const OAUTH_RESULTS: Record<IntervalsOAuthResult, string> = {
+  connected: 'Connected. Your runs are on their way.',
+  denied: "openRun wasn't given access on intervals.icu, so nothing changed.",
+  expired: 'That sign-in took too long or was started elsewhere. Try again.',
+  taken:
+    'That intervals.icu account is already connected to someone else on this server.',
+  failed: "intervals.icu didn't finish the sign-in. Try again in a minute.",
+};
+
+/** How the intervals.icu sign-in ended, read once from `?intervals=`. */
+function useOAuthResult() {
+  const [params, setParams] = useSearchParams();
+  const [result] = useState(() => {
+    const value = params.get('intervals');
+    return value && value in OAUTH_RESULTS
+      ? (value as IntervalsOAuthResult)
+      : null;
+  });
+  useEffect(() => {
+    if (!params.has('intervals')) return;
+    const next = new URLSearchParams(params);
+    next.delete('intervals');
+    setParams(next, { replace: true });
+  }, [params, setParams]);
+  return result;
+}
 
 export function IntervalsSettings() {
   const { data } = useIntegrations();
+  const result = useOAuthResult();
   if (!data) return null;
-  const { available, connection } = data.intervals;
+  const { available, oauth, connection } = data.intervals;
 
   return (
     <section className="card space-y-4" aria-label="Sync from your watch">
@@ -35,48 +70,149 @@ export function IntervalsSettings() {
           sync to. openRun gets the original file from your watch.
         </p>
       </div>
+      {result && (
+        <p
+          role="status"
+          className={
+            result === 'connected'
+              ? 'rounded-xl bg-brand-50 p-3 text-sm text-brand-700 dark:bg-brand-500/10 dark:text-brand-500'
+              : 'rounded-xl bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-400'
+          }
+        >
+          {OAUTH_RESULTS[result]}
+        </p>
+      )}
       {!available ? (
         <p className="text-sm text-stone-500">
           Syncing is turned off on this server. You can still upload FIT and GPX
           files.
         </p>
       ) : connection ? (
-        <Connected connection={connection} />
+        <Connected connection={connection} oauth={oauth} />
       ) : (
-        <Connect />
+        <Connect oauth={oauth} />
       )}
     </section>
   );
 }
 
-function Connect() {
+function ConnectWatchStep() {
+  return (
+    <li>
+      Create an account at{' '}
+      <a
+        className="text-brand-600"
+        href={INTERVALS}
+        target="_blank"
+        rel="noreferrer"
+      >
+        intervals.icu
+      </a>{' '}
+      and connect your watch under <strong>Settings → Connections</strong>.
+      Connect the watch itself, not Strava: intervals.icu can't pass on runs
+      that came from Strava.
+    </li>
+  );
+}
+
+function KeySteps() {
+  return (
+    <>
+      <li>
+        On intervals.icu, open <strong>Settings → Developer Settings</strong>{' '}
+        and copy your API key.
+      </li>
+      <li>Paste it below.</li>
+    </>
+  );
+}
+
+function Connect({ oauth }: { oauth: boolean }) {
+  if (!oauth) {
+    return (
+      <div className="space-y-4">
+        <ol className="list-decimal space-y-2 pl-5 text-sm">
+          <ConnectWatchStep />
+          <KeySteps />
+        </ol>
+        <KeyForm label="Connect" withStartDate />
+      </div>
+    );
+  }
   return (
     <div className="space-y-4">
       <ol className="list-decimal space-y-2 pl-5 text-sm">
-        <li>
-          Create an account at{' '}
-          <a
-            className="text-brand-600"
-            href={INTERVALS}
-            target="_blank"
-            rel="noreferrer"
-          >
-            intervals.icu
-          </a>{' '}
-          and connect your watch under <strong>Settings → Connections</strong>.
-          Connect the watch itself, not Strava: intervals.icu can't pass on runs
-          that came from Strava.
-        </li>
-        <li>
-          On intervals.icu, open <strong>Settings → Developer Settings</strong>{' '}
-          and copy your API key.
-        </li>
-        <li>Paste it below.</li>
+        <ConnectWatchStep />
+        <li>Come back here and connect. intervals.icu asks you to allow it.</li>
       </ol>
-      <KeyForm label="Connect" withStartDate />
+      <OAuthForm label="Connect with intervals.icu" withStartDate />
+      <details className="text-sm">
+        <summary className="cursor-pointer text-stone-500">
+          Use an API key instead
+        </summary>
+        <div className="mt-3 space-y-3">
+          <ol className="list-decimal space-y-2 pl-5" start={2}>
+            <KeySteps />
+          </ol>
+          <KeyForm label="Connect with key" withStartDate />
+        </div>
+      </details>
     </div>
   );
 }
+
+/**
+ * A plain GET form: the browser goes to the API, which sends it on to
+ * intervals.icu and back to Settings afterwards.
+ */
+function OAuthForm({
+  label,
+  withStartDate = false,
+  secondary = false,
+}: {
+  label: string;
+  withStartDate?: boolean;
+  secondary?: boolean;
+}) {
+  const { data: instance } = useInstance();
+  return (
+    <form method="get" action={OAUTH_START} className="space-y-3">
+      {withStartDate && <StartDate />}
+      <Note>
+        openRun only asks to read your activities. Whoever runs this server
+        {instance?.contact ? ` (${instance.contact})` : ''} could read them on
+        intervals.icu too, but can't change anything there or reach your watch
+        maker's account. To cut it off, disconnect here.
+      </Note>
+      <button className={secondary ? 'btn-secondary' : 'btn-primary'}>
+        {label}
+      </button>
+    </form>
+  );
+}
+
+function StartDate({ id = 'syncFrom' }: { id?: string }) {
+  return (
+    <div>
+      <label className="label" htmlFor={id}>
+        Import runs from
+      </label>
+      <input
+        className="input"
+        id={id}
+        name="syncFrom"
+        type="date"
+        defaultValue={startOfYear()}
+        max={today()}
+        required
+      />
+    </div>
+  );
+}
+
+const Note = ({ children }: { children: ReactNode }) => (
+  <p className="text-xs text-stone-500">{children}</p>
+);
 
 function KeyForm({
   label,
@@ -119,29 +255,14 @@ function KeyForm({
           required
         />
       </div>
-      {withStartDate && (
-        <div>
-          <label className="label" htmlFor="syncFrom">
-            Import runs from
-          </label>
-          <input
-            className="input"
-            id="syncFrom"
-            name="syncFrom"
-            type="date"
-            defaultValue={startOfYear()}
-            max={today()}
-            required
-          />
-        </div>
-      )}
-      <p className="text-xs text-stone-500">
+      {withStartDate && <StartDate id="syncFromKey" />}
+      <Note>
         The key is stored encrypted. Whoever runs this server
         {instance?.contact ? ` (${instance.contact})` : ''} could still use it
         to read and change your intervals.icu account, though not your watch
         maker's account. To cut it off, disconnect here or make a new key on
         intervals.icu.
-      </p>
+      </Note>
       <FormError message={connect.error?.message ?? null} />
       <button className="btn-primary" disabled={connect.isPending}>
         {connect.isPending ? 'Checking the key…' : label}
@@ -150,7 +271,13 @@ function KeyForm({
   );
 }
 
-function Connected({ connection }: { connection: IntervalsConnection }) {
+function Connected({
+  connection,
+  oauth,
+}: {
+  connection: IntervalsConnection;
+  oauth: boolean;
+}) {
   const sync = useSyncIntervals();
   const update = useUpdateIntervals();
   const disconnect = useDisconnectIntervals();
@@ -195,11 +322,31 @@ function Connected({ connection }: { connection: IntervalsConnection }) {
 
       {connection.status === 'needs_key' ? (
         <div className="space-y-3 rounded-xl bg-amber-50 p-3 text-sm dark:bg-amber-500/10">
-          <p>
-            intervals.icu no longer accepts the saved key, so syncing has
-            stopped. Paste your current key to start again.
-          </p>
-          <KeyForm label="Save key" />
+          {connection.authMethod === 'oauth' ? (
+            <>
+              <p>
+                intervals.icu no longer lets openRun read your runs, so syncing
+                has stopped. Connect again to start again.
+              </p>
+              {oauth ? (
+                <OAuthForm label="Connect again" />
+              ) : (
+                <KeyForm label="Save key" />
+              )}
+            </>
+          ) : (
+            <>
+              <p>
+                intervals.icu no longer accepts the saved key, so syncing has
+                stopped. Paste your current key to start again
+                {oauth ? ', or connect with intervals.icu instead' : ''}.
+              </p>
+              <KeyForm label="Save key" />
+              {oauth && (
+                <OAuthForm label="Connect with intervals.icu" secondary />
+              )}
+            </>
+          )}
         </div>
       ) : (
         connection.status === 'error' &&

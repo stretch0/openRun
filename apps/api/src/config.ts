@@ -38,6 +38,13 @@ const envSchema = z.object({
   /** intervals.icu, for syncing runs from watches. Empty turns it off. */
   INTERVALS_URL: z.string().default('https://intervals.icu'),
   /**
+   * An intervals.icu OAuth app, so members connect with a button instead of
+   * pasting an API key. Register one at https://intervals.icu/oauth/apply
+   * with ORIGIN/api/integrations/intervals/oauth/callback as the redirect URI.
+   */
+  INTERVALS_CLIENT_ID: z.string().optional(),
+  INTERVALS_CLIENT_SECRET: z.string().optional(),
+  /**
    * A public demo: seeded with sample data on start and every night, with a
    * shared login and sign-ups, uploads and account changes turned off.
    * Everything in the database is replaced.
@@ -61,6 +68,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     );
   }
   const dataDir = resolve(e.DATA_DIR);
+  const intervalsUrl = e.INTERVALS_URL.trim().replace(/\/+$/, '') || null;
+  const intervalsClientId = e.INTERVALS_CLIENT_ID?.trim();
+  const intervalsClientSecret = e.INTERVALS_CLIENT_SECRET?.trim();
   return {
     production,
     port: e.PORT,
@@ -88,7 +98,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     trustProxy: e.TRUST_PROXY,
     placeSearchUrl: e.PLACE_SEARCH_URL.trim() || null,
     weatherUrl: e.WEATHER_URL.trim() || null,
-    intervalsUrl: e.INTERVALS_URL.trim().replace(/\/+$/, '') || null,
+    intervalsUrl,
+    /** Null when members have to paste an API key instead. */
+    // Off on the demo, where everyone shares one login.
+    intervalsOAuth:
+      !e.DEMO_MODE && intervalsUrl && intervalsClientId && intervalsClientSecret
+        ? { clientId: intervalsClientId, clientSecret: intervalsClientSecret }
+        : null,
     demo: e.DEMO_MODE,
     vapidKeys:
       e.VAPID_PUBLIC_KEY && e.VAPID_PRIVATE_KEY

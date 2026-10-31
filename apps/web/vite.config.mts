@@ -56,11 +56,13 @@ export default defineConfig(() => ({
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
-            // Show the last data we saw when offline. Auth is never cached.
+            // Show the last data we saw when offline. Auth is never cached,
+            // nor pages under /api such as the intervals.icu sign-in redirects.
             urlPattern: ({ url, request }) =>
               url.pathname.startsWith('/api/') &&
               !url.pathname.startsWith('/api/auth/') &&
-              request.method === 'GET',
+              request.method === 'GET' &&
+              request.mode !== 'navigate',
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api',

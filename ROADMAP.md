@@ -67,4 +67,5 @@ Through intervals.icu; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) → Inte
 - Capacitor apps for iOS and Android
 - Postgres option, OIDC sign-in
 - Phone app reading Apple Health and Health Connect (the best route for Apple Watch and Android watches)
-- intervals.icu OAuth and webhooks instead of API keys and polling; ICS feed for club runs
+- ✅ Connecting intervals.icu by signing in (OAuth), on servers with an intervals.icu app; pasting an API key still works
+- intervals.icu webhooks instead of polling, for servers with an app; ICS feed for club runs

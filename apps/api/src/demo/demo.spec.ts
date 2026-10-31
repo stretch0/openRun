@@ -83,6 +83,11 @@ describe('demo mode', () => {
         403,
       );
     }
+    // Signing in to intervals.icu starts with a GET.
+    expect(
+      (await get(app, '/api/integrations/intervals/oauth/start', cookie))
+        .status,
+    ).toBe(403);
     // Everything else works as normal.
     expect((await get(app, '/api/stats', cookie)).status).toBe(200);
     expect(

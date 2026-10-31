@@ -102,7 +102,10 @@ Inside one instance, the personal module "sends" a share by calling the club mod
 
 Runs arrive through intervals.icu, which the member signs up to and connects to their watch maker themselves. openRun never sees a Garmin (or other) password.
 
-- The member's intervals.icu API key is stored encrypted, so a leaked database or backup doesn't expose it. The server needs to read it to sync while the member is away, so **whoever runs the server could use it**. It gives full access to the member's intervals.icu account, but not to their watch maker's account. The Integrations page says this before the key is pasted, names the instance's contact, and explains how to cut it off (disconnect, or make a new key on intervals.icu).
+- The server keeps either an OAuth token or the member's intervals.icu API key, encrypted, so a leaked database or backup doesn't expose it. The server needs to read it to sync while the member is away, so **whoever runs the server could use it**:
+  - An OAuth token (when the server has an intervals.icu app) only allows reading the member's activities. Disconnecting revokes it.
+  - An API key gives full access to the member's intervals.icu account.
+  - Neither reaches the member's watch maker's account. Settings says this before connecting, names the instance's contact, and explains how to cut it off (disconnect, or for a key, make a new one on intervals.icu).
 - Imported runs are ordinary runs: private by default (or the member's default visibility), and shared only when the member chooses.
 - intervals.icu sees that this server asked for the member's activities, nothing more.
 - Garmin and Strava were not used directly. Garmin's unofficial sign-in would have meant holding members' Garmin logins; Strava's terms forbid keeping the data. See `docs/ARCHITECTURE.md` → Integrations.
