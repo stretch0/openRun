@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
 import { useInstance, useMe } from '../lib/queries';
+import { BackLink } from '../components/back-link';
 
 /** "Who can see what": readable before signing up, so it's outside the app layout. */
 export function PrivacyPage() {
@@ -9,12 +9,7 @@ export function PrivacyPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-16 pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <Link
-        to={me ? '/settings' : '/register'}
-        className="text-sm text-brand-600"
-      >
-        ← Back
-      </Link>
+      <BackLink to={me ? '/settings' : '/register'}>Back</BackLink>
       <h1 className="text-2xl font-semibold">Who can see what</h1>
 
       <Section title="Your runs">

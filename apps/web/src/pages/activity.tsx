@@ -31,6 +31,7 @@ import { SPORT_LABELS, formatDateTime, ordinal, pbLabel } from '../lib/format';
 import { useMe } from '../lib/queries';
 import { VISIBILITY_LABELS } from '../lib/privacy';
 import { useShoes } from '../lib/stats';
+import { BackLink } from '../components/back-link';
 
 const RouteMap = lazy(() => import('../components/route-map'));
 
@@ -59,9 +60,7 @@ export function ActivityPage() {
   return (
     <>
       <div>
-        <Link to="/" className="text-sm text-brand-600">
-          ← Runs
-        </Link>
+        <BackLink to="/">Runs</BackLink>
         {editing ? (
           <EditActivity activity={a} onDone={() => setEditing(false)} />
         ) : (

@@ -13,6 +13,7 @@ import { ClubLogo } from '../components/club-logo';
 import { CoffeePicker, describeOrder } from '../components/coffee';
 import { clubApi, useClub, useClubMutation, useClubRuns } from '../lib/clubs';
 import { ApiError } from '../lib/api';
+import { BackLink } from '../components/back-link';
 
 export const SHARE_LEVEL_LABELS: Record<ShareLevel, string> = {
   attendance: 'Attendance only',
@@ -53,9 +54,7 @@ export function ClubPage() {
     <>
       <div>
         <div className="flex min-h-9 items-center justify-between gap-3">
-          <Link to="/clubs" className="text-sm text-brand-600">
-            ← Clubs
-          </Link>
+          <BackLink to="/clubs">Clubs</BackLink>
           {manage && (
             <Link
               to={`/clubs/${c.id}/manage`}
