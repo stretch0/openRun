@@ -94,7 +94,10 @@ test.describe('signed in', () => {
     ).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Splits' })).toBeVisible();
 
-    await page.getByRole('link', { name: '← Runs' }).click();
+    await page
+      .getByRole('main')
+      .getByRole('link', { name: 'Runs', exact: true })
+      .click();
     await expect(
       page.getByRole('link', { name: /Riverside loop/ }),
     ).toBeVisible();
@@ -362,7 +365,11 @@ test.describe('clubs', () => {
       256,
     );
 
-    await page.getByRole('link', { name: '← Parkside Runners' }).click();
+    await page
+      .getByRole('main')
+      .getByRole('link', { name: 'Parkside Runners', exact: true })
+      .first()
+      .click();
     await expect(page.getByTestId('club-logo')).toBeVisible();
     const code = (
       await page
@@ -412,7 +419,11 @@ test.describe('clubs', () => {
     await expect(page.getByText('Bea', { exact: true })).toBeVisible();
 
     // Coffee for tomorrow's run (today's may have closed already).
-    await page.getByRole('link', { name: '← Parkside Runners' }).click();
+    await page
+      .getByRole('main')
+      .getByRole('link', { name: 'Parkside Runners', exact: true })
+      .first()
+      .click();
     const nextRun = page.getByRole('article').nth(1);
     await nextRun.getByRole('button', { name: 'Going' }).click();
     await expect(nextRun.getByText('1 going')).toBeVisible();
