@@ -24,7 +24,7 @@
     color-scheme: dark;
   }
   body {
-    @apply min-h-dvh bg-stone-50 text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100;
+    @apply min-h-svh bg-stone-50 text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100;
   }
 }
 

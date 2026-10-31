@@ -8,7 +8,7 @@ export function AuthCard({
   children: ReactNode;
 }) {
   return (
-    <div className="grid min-h-dvh place-items-center px-4 py-10">
+    <div className="grid min-h-svh place-items-center px-4 py-10">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <img src="/favicon.svg" alt="" className="h-14 w-14" />

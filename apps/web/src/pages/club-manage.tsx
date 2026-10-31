@@ -12,6 +12,7 @@ import { ClubLogo } from '../components/club-logo';
 import { clubApi, useClub, useClubMutation } from '../lib/clubs';
 import { usePlaceSearch } from '../lib/places';
 import { useInstance, useMe } from '../lib/queries';
+import { BackLink } from '../components/back-link';
 
 const PointMap = lazy(() => import('../components/zone-map'));
 const LogoPicker = lazy(() => import('../components/logo-picker'));
@@ -43,9 +44,7 @@ export function ClubManagePage() {
   return (
     <>
       <div>
-        <Link to={`/clubs/${club.id}`} className="text-sm text-brand-600">
-          ← {club.name}
-        </Link>
+        <BackLink to={`/clubs/${club.id}`}>{club.name}</BackLink>
         <h1 className="mt-1 text-2xl font-semibold">Manage club</h1>
       </div>
       <Requests club={club} />

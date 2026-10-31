@@ -13,6 +13,7 @@ import { ClubLogo } from '../components/club-logo';
 import { CoffeePicker, describeOrder } from '../components/coffee';
 import { clubApi, useClub, useClubMutation, useClubRuns } from '../lib/clubs';
 import { ApiError } from '../lib/api';
+import { BackLink } from '../components/back-link';
 
 export const SHARE_LEVEL_LABELS: Record<ShareLevel, string> = {
   attendance: 'Attendance only',
@@ -52,27 +53,25 @@ export function ClubPage() {
   return (
     <>
       <div>
-        <Link to="/clubs" className="text-sm text-brand-600">
-          ← Clubs
-        </Link>
-        <div className="mt-1 flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <ClubLogo club={c} size="lg" />
-            <div className="min-w-0">
-              <h1 className="text-2xl font-semibold">{c.name}</h1>
-              <p className="text-sm text-stone-500">
-                {c.memberCount} {c.memberCount === 1 ? 'member' : 'members'}
-              </p>
-            </div>
-          </div>
+        <div className="flex min-h-9 items-center justify-between gap-3">
+          <BackLink to="/clubs">Clubs</BackLink>
           {manage && (
             <Link
               to={`/clubs/${c.id}/manage`}
-              className="btn-secondary shrink-0"
+              className="btn-secondary px-3 py-1.5 text-sm"
             >
               Manage
             </Link>
           )}
+        </div>
+        <div className="mt-2 flex items-center gap-3">
+          <ClubLogo club={c} size="lg" />
+          <div className="min-w-0">
+            <h1 className="text-2xl leading-tight font-semibold">{c.name}</h1>
+            <p className="mt-0.5 text-sm text-stone-500">
+              {c.memberCount} {c.memberCount === 1 ? 'member' : 'members'}
+            </p>
+          </div>
         </div>
         {c.description && (
           <p className="mt-2 whitespace-pre-wrap text-stone-600 dark:text-stone-300">

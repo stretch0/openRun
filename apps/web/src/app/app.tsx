@@ -27,7 +27,7 @@ function RequireUser({ admin = false }: { admin?: boolean }) {
 
 function Splash() {
   return (
-    <div className="grid min-h-dvh place-items-center text-stone-500">
+    <div className="grid min-h-svh place-items-center text-stone-500">
       Loading…
     </div>
   );

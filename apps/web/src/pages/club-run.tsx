@@ -16,6 +16,7 @@ import {
 } from '../lib/clubs';
 import { ApiError } from '../lib/api';
 import { formatRunTime, mapLink } from '../lib/format';
+import { BackLink } from '../components/back-link';
 
 export function ClubRunPage() {
   const { id = '', runId = '' } = useParams();
@@ -38,17 +39,13 @@ export function ClubRunPage() {
   return (
     <>
       <div>
-        <Link
-          to={`/clubs/${r.clubId}`}
-          className="inline-flex items-center gap-1.5 text-sm text-brand-600"
-        >
-          ←{' '}
+        <BackLink to={`/clubs/${r.clubId}`}>
           <ClubLogo
             club={{ id: r.clubId, name: r.clubName, logoUrl: r.clubLogoUrl }}
             size="sm"
           />
           {r.clubName}
-        </Link>
+        </BackLink>
         <h1
           className={`mt-1 text-2xl font-semibold ${cancelled ? 'line-through' : ''}`}
         >
