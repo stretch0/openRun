@@ -35,8 +35,25 @@ export function SettingsPage() {
     });
   };
 
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
   const signOut = async () => {
-    await authClient.signOut();
+    setSigningOut(true);
+    setSignOutError(null);
+    const fallback = "Couldn't sign out. Check your connection and try again.";
+    try {
+      // Better Auth reports failures in the result rather than throwing.
+      const { error } = await authClient.signOut();
+      if (error) {
+        setSignOutError(authErrorMessage(error, fallback));
+        setSigningOut(false);
+        return;
+      }
+    } catch {
+      setSignOutError(fallback);
+      setSigningOut(false);
+      return;
+    }
     queryClient.clear();
     navigate('/login', { replace: true });
   };
@@ -135,9 +152,14 @@ export function SettingsPage() {
         <h2 className="font-semibold">This device</h2>
         <Appearance />
         <InstallButton />
-        <button className="btn-secondary w-full" onClick={signOut}>
-          Sign out
+        <button
+          className="btn-secondary w-full"
+          onClick={signOut}
+          disabled={signingOut}
+        >
+          {signingOut ? 'Signing out…' : 'Sign out'}
         </button>
+        <FormError message={signOutError} />
       </section>
     </>
   );
