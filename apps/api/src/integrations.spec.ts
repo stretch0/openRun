@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -279,6 +281,83 @@ describe('intervals.icu sync', () => {
     });
     t.fake.state.status = 200;
     expect(await t.sync()).toMatchObject({ status: 'ok', importedCount: 1 });
+  });
+
+  it('removes runs that intervals.icu now lists as another sport', async () => {
+    const activities: FakeActivity[] = [
+      { id: 'i1', start_date: daysAgo(3), type: 'Run', name: 'Not a run' },
+      { id: 'i2', start_date: daysAgo(2), type: 'Run', name: 'Deleted' },
+      { id: 'i3', start_date: daysAgo(1), type: 'Run', name: 'Real run' },
+    ];
+    const t = await connected(activities);
+    await importFit(t.app, t.cookie, { start: new Date(daysAgo(6)) });
+    await t.sync();
+    const byName = async () =>
+      Object.fromEntries((await t.runs()).map((r) => [r.name, r]));
+    const before = await byName();
+    expect(Object.keys(before)).toHaveLength(4);
+
+    // Shared with a club before anyone noticed it was a ride.
+    const club = (await (
+      await send(t.app, t.cookie, 'POST', '/api/clubs', {
+        name: 'Parkside',
+        timezone: 'Europe/London',
+      })
+    ).json()) as { id: string };
+    await send(t.app, t.cookie, 'PATCH', `/api/clubs/${club.id}/me`, {
+      shareLevel: 'summaries',
+    });
+    const ride = before['Not a run'];
+    await send(
+      t.app,
+      t.cookie,
+      'PUT',
+      `/api/activities/${ride.id}/clubs/${club.id}`,
+    );
+    expect(t.db.select().from(schema.clubShare).all()).toHaveLength(1);
+    const [{ originalFile }] = t.db
+      .select({ originalFile: schema.activity.originalFile })
+      .from(schema.activity)
+      .where(eq(schema.activity.id, ride.id))
+      .all();
+    expect(
+      originalFile && existsSync(join(t.config.dataDir, originalFile)),
+    ).toBe(true);
+
+    // A run deleted by hand stays deleted, whatever it becomes.
+    await send(
+      t.app,
+      t.cookie,
+      'DELETE',
+      `/api/activities/${before.Deleted.id}`,
+    );
+    activities[0].type = 'Ride';
+    activities[1].type = 'Ride';
+    const connection = await t.sync();
+    expect(connection.syncs[0]).toMatchObject({ imported: 0, removed: 1 });
+    // The upload and the real run are left alone.
+    expect(await t.runs()).toHaveLength(2);
+    expect(await byName()).toHaveProperty('Real run');
+    expect(await byName()).not.toHaveProperty('Not a run');
+    expect(t.db.select().from(schema.clubShare).all()).toEqual([]);
+    expect(
+      t.db
+        .select()
+        .from(schema.personalBest)
+        .where(eq(schema.personalBest.activityId, ride.id))
+        .all(),
+    ).toEqual([]);
+    expect(existsSync(join(t.config.dataDir, originalFile ?? ''))).toBe(false);
+
+    // Nothing more to remove next time.
+    expect((await t.sync()).syncs[0]).toMatchObject({ removed: 0 });
+
+    // Turned back into a run: imported again. The one deleted by hand isn't.
+    activities[0].type = 'Run';
+    activities[1].type = 'Run';
+    expect((await t.sync()).syncs[0]).toMatchObject({ imported: 1 });
+    expect(await byName()).toHaveProperty('Not a run');
+    expect(await byName()).not.toHaveProperty('Deleted');
   });
 
   it('keeps imported runs after disconnecting, and one account per person', async () => {

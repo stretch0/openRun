@@ -284,6 +284,8 @@ export function describeSync(s: IntegrationSync) {
     parts.push(
       `${s.unavailable} from Strava, which intervals.icu can't pass on`,
     );
+  if (s.removed)
+    parts.push(`${s.removed} removed, now another sport on intervals.icu`);
   if (s.error) parts.push(s.error);
   if (!parts.length) parts.push('Nothing new');
   if (s.more) parts.push('more next time');
