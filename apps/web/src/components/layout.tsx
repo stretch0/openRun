@@ -10,7 +10,7 @@ export function Layout() {
   const { data: me } = useMe();
   const { data: instance } = useInstance();
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col">
+    <div className="mx-auto flex min-h-svh max-w-2xl flex-col">
       <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-stone-200 bg-stone-50/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur dark:border-stone-800 dark:bg-stone-950/90">
         <img src="/favicon.svg" alt="" className="h-7 w-7" />
         <span className="text-lg font-semibold">openRun</span>
