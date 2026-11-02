@@ -10,6 +10,7 @@ import type { Config } from './config.js';
 import type { AppEnv } from './context.js';
 import { demoLimits } from './demo/limits.js';
 import { Notifier } from './push.js';
+import { securityHeaders } from './security-headers.js';
 import { activityRoutes, personalBestRoutes } from './routes/activities.js';
 import { clubRoutes } from './clubs/routes.js';
 import { adminRoutes } from './routes/admin.js';
@@ -36,6 +37,8 @@ export function createApp({
   notifier?: Notifier;
 }) {
   const app = new Hono<AppEnv>();
+  const indexHtml = config.webDir ? readIndexHtml(config.webDir) : undefined;
+  app.use('*', securityHeaders(config, indexHtml));
 
   if (config.logRequests) app.use(logger());
 
@@ -69,7 +72,9 @@ export function createApp({
   app.route('/api/integrations', integrationRoutes);
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));
 
-  if (config.webDir) serveWeb(app, config.webDir);
+  if (config.webDir && indexHtml !== undefined) {
+    serveWeb(app, config.webDir, indexHtml);
+  }
 
   return app;
 }
@@ -94,13 +99,16 @@ function withClientIp(req: Request, c: Context | null) {
 }
 
 /** Serves the built PWA, falling back to index.html for client-side routes. */
-function serveWeb(app: Hono<AppEnv>, webDir: string) {
+function readIndexHtml(webDir: string) {
   const indexPath = join(webDir, 'index.html');
   if (!existsSync(indexPath)) {
     console.warn(`WEB_DIR is set but ${indexPath} does not exist`);
-    return;
+    return undefined;
   }
-  const indexHtml = readFileSync(indexPath, 'utf8');
+  return readFileSync(indexPath, 'utf8');
+}
+
+function serveWeb(app: Hono<AppEnv>, webDir: string, indexHtml: string) {
   app.use(
     '*',
     serveStatic({
