@@ -50,6 +50,8 @@ docker compose up -d
 
 Open the URL. The first account you create becomes the admin. Everything is stored in `./data` (see [Backups](#backups)).
 
+No server of your own? [docs/FLY.md](docs/FLY.md) runs it on Fly.io for a few dollars a month.
+
 Passkeys need HTTPS (or `localhost`), so put openRun behind a reverse proxy such as Caddy or Traefik for anything beyond local use. When you do, set `TRUST_PROXY=true`. All settings are listed in [.env.example](.env.example). To run a public demo with sample data instead, see [docs/DEMO.md](docs/DEMO.md).
 
 ### Upgrading
