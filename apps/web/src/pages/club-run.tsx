@@ -225,9 +225,11 @@ function Coffee({ run, coffee }: { run: ClubRunDetail; coffee: RunCoffee }) {
       {!picking && <FormError message={order.error?.message} />}
 
       <p className="text-xs text-stone-500">
-        {coffee.open
-          ? `Orders close ${closes}.`
-          : 'Orders have closed. The list is ready for the café.'}
+        {!coffee.open
+          ? 'Orders have closed. The list is ready for the café.'
+          : coffee.closesAt > run.startsAt
+            ? 'You can still order after the run.'
+            : `Orders close ${closes}.`}
       </p>
     </section>
   );

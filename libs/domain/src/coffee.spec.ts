@@ -1,6 +1,7 @@
 import {
   describeChoices,
   formatMenuOptions,
+  NO_CUTOFF,
   ordersCloseAt,
   parseMenuOptions,
   resolveChoices,
@@ -48,6 +49,13 @@ describe('orders', () => {
     expect(ordersCloseAt(start, 0)).toEqual(start);
     expect(ordersCloseAt(start, 30).toISOString()).toBe(
       '2026-10-31T07:30:00.000Z',
+    );
+  });
+
+  it('stays open after the run with no cut-off', () => {
+    const start = new Date('2026-10-31T08:00:00Z');
+    expect(ordersCloseAt(start, NO_CUTOFF).toISOString()).toBe(
+      '2026-10-31T11:00:00.000Z',
     );
   });
 

@@ -8,6 +8,7 @@ import {
   describeWeather,
   formatRule,
   parseRule,
+  RUN_STILL_ON_MIN,
 } from '@openrun/domain';
 import {
   type Attendee,
@@ -73,7 +74,7 @@ type ClubRow = typeof schema.club.$inferSelect;
 type RunRow = typeof schema.clubRun.$inferSelect;
 
 /** Runs that started up to this long ago still show as upcoming. */
-const STILL_ON_MS = 3 * 60 * 60 * 1000;
+const STILL_ON_MS = RUN_STILL_ON_MIN * 60_000;
 
 function memberCount(c: Ctx, clubId: string) {
   return (

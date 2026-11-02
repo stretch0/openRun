@@ -59,7 +59,19 @@ export function describeChoices(choices: OrderChoice[]): string {
   return choices.map((c) => c.choice).join(', ');
 }
 
-/** When orders lock: `cutoffMinutes` before the run starts. */
+/** A club run still counts as on, and shows as upcoming, this long after it starts. */
+export const RUN_STILL_ON_MIN = 3 * 60;
+
+/**
+ * The cut-off for "no cut-off": orders stay open after the run, until it
+ * stops showing as upcoming.
+ */
+export const NO_CUTOFF = -RUN_STILL_ON_MIN;
+
+/**
+ * When orders lock: `cutoffMinutes` before the run starts, or after it for a
+ * negative cut-off (see NO_CUTOFF).
+ */
 export function ordersCloseAt(startsAt: Date, cutoffMinutes: number): Date {
   return new Date(startsAt.getTime() - cutoffMinutes * 60_000);
 }
