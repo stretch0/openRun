@@ -213,7 +213,9 @@ export function sendCoffeeNudges(db: Db, notifier: Notifier, now = new Date()) {
     new Date(now.getTime() + 25 * HOUR_MS),
   )) {
     const closes = ordersCloseAt(run.startsAt, run.orderCutoffMin);
-    if (closes <= now || closes.getTime() - now.getTime() > COFFEE_NUDGE_MS) {
+    // With orders open after the run, nudge before the start instead.
+    const nudgeBy = closes > run.startsAt ? run.startsAt : closes;
+    if (nudgeBy <= now || nudgeBy.getTime() - now.getTime() > COFFEE_NUDGE_MS) {
       continue;
     }
     const club = clubOf(db, run.clubId);
@@ -245,7 +247,10 @@ export function sendCoffeeNudges(db: Db, notifier: Notifier, now = new Date()) {
         notifier,
         [userId],
         {
-          title: `Coffee orders close at ${localTime(closes, club.timezone)}`,
+          title:
+            closes > run.startsAt
+              ? `Want a coffee after ${run.title}?`
+              : `Coffee orders close at ${localTime(closes, club.timezone)}`,
           body: `Order for after ${run.title} with ${club.name}.`,
           url: runUrl(run),
           tag: `coffee:${run.id}`,

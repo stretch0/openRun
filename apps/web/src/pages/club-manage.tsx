@@ -1,6 +1,7 @@
 import { type FormEvent, Suspense, lazy, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
+  NO_CUTOFF,
   WEEKDAYS,
   formatMenuOptions,
   parseMenuOptions,
@@ -113,7 +114,7 @@ function RepeatingRuns({ club }: { club: Club }) {
         startTime: String(form.get('startTime')),
         locationId: String(form.get('seriesLocation') ?? '') || null,
         notes: String(form.get('seriesNotes') ?? '') || null,
-        orderCutoffMin: Number(form.get('seriesCutoff') ?? 0),
+        orderCutoffMin: Number(form.get('seriesCutoff') ?? NO_CUTOFF),
       },
       { onSuccess: () => setAdding(false) },
     );
@@ -319,7 +320,7 @@ function OneOffRun({ club }: { club: Club }) {
         startsAt: zonedTime(day, time, club.timezone).toISOString(),
         locationId: String(form.get('runLocation') ?? '') || null,
         notes: String(form.get('runNotes') ?? '') || null,
-        orderCutoffMin: Number(form.get('runCutoff') ?? 0),
+        orderCutoffMin: Number(form.get('runCutoff') ?? NO_CUTOFF),
       },
       { onSuccess: (run) => navigate(`/clubs/${club.id}/runs/${run.id}`) },
     );
@@ -381,6 +382,7 @@ const hasMenu = (club: Club) => club.menu.some((i) => !i.hidden);
 
 /** Minutes before the start that coffee orders lock. */
 const CUTOFFS: [number, string][] = [
+  [NO_CUTOFF, 'No cut-off'],
   [0, 'When the run starts'],
   [15, '15 minutes before'],
   [30, '30 minutes before'],
@@ -395,7 +397,7 @@ function CutoffSelect({ club, name }: { club: Club; name: string }) {
       <label className="label" htmlFor={name}>
         Coffee orders close
       </label>
-      <select className="input" id={name} name={name} defaultValue={0}>
+      <select className="input" id={name} name={name} defaultValue={NO_CUTOFF}>
         {CUTOFFS.map(([value, text]) => (
           <option key={value} value={value}>
             {text}
@@ -404,6 +406,7 @@ function CutoffSelect({ club, name }: { club: Club; name: string }) {
       </select>
       <p className="mt-1 text-xs text-stone-500">
         After this the order list stops changing, ready to show at the café.
+        With no cut-off, people can still order after the run.
       </p>
     </div>
   );

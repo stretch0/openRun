@@ -292,6 +292,10 @@ test.describe('clubs', () => {
       page.getByRole('heading', { name: 'Manage club' }),
     ).toBeVisible();
 
+    // Sending it without a name says what's missing.
+    await page.getByRole('button', { name: 'Add repeating run' }).click();
+    await expect(page.getByRole('alert')).toHaveText('Fill in “Name” first.');
+
     // Every day, so there's always a run in the next few days.
     await page.getByLabel('Name', { exact: true }).first().fill('Club run');
     for (const day of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']) {
