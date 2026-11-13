@@ -78,7 +78,7 @@
     "drizzle-orm": "^0.45.4",
     "fast-xml-parser": "5.11.2",
     "fit-file-parser": "6.2.3",
-    "hono": "^4.13.14",
+    "hono": "^4.13.18",
     "maplibre-gl": "6.15.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
