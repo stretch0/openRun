@@ -3,6 +3,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { nxReadySignal } from '@nx/vite/plugins/nx-ready-signal.plugin';
 
 // The API's port in development; set PORT to move both off 3000.
 const api = `http://localhost:${process.env['PORT'] ?? 3000}`;
@@ -73,6 +74,7 @@ export default defineConfig(() => ({
         ],
       },
     }),
+    nxReadySignal(),
   ],
   build: {
     outDir: './dist',

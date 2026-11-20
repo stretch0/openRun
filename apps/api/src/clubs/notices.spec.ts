@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { schema } from '@openrun/db';
+import { NO_CUTOFF } from '@openrun/domain';
 import {
   clubRunDetailSchema,
   clubSchema,
@@ -192,6 +193,27 @@ describe('run reminders', () => {
       },
     ]);
     sendCoffeeNudges(t.db, t.notifier, new Date('2027-01-09T07:15:00Z'));
+    expect(t.sent).toHaveLength(1);
+  });
+
+  it('nudges before the start when orders stay open after the run', async () => {
+    const t = await club();
+    await send(t.app, t.olly, 'POST', `/api/clubs/${t.club.id}/menu`, {
+      name: 'Flat white',
+    });
+    const run = await t.addRun(SAT_8AM, { orderCutoffMin: NO_CUTOFF });
+    await t.rsvp(t.ann, run.id, 'going');
+    sendCoffeeNudges(t.db, t.notifier, new Date('2027-01-09T07:25:00Z'));
+    expect(t.sent).toEqual([]);
+    sendCoffeeNudges(t.db, t.notifier, new Date('2027-01-09T07:35:00Z'));
+    expect(t.sent).toMatchObject([
+      {
+        endpoint: 'https://push.example.com/ann',
+        title: 'Want a coffee after Social?',
+      },
+    ]);
+    // Not again after the start, though orders are still open.
+    sendCoffeeNudges(t.db, t.notifier, new Date('2027-01-09T08:30:00Z'));
     expect(t.sent).toHaveLength(1);
   });
 });

@@ -1,4 +1,5 @@
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { FormHint } from '../components/form-hint';
 import { Layout } from '../components/layout';
 import { UpdatePrompt } from '../components/update-prompt';
 import { useMe } from '../lib/queries';
@@ -27,7 +28,7 @@ function RequireUser({ admin = false }: { admin?: boolean }) {
 
 function Splash() {
   return (
-    <div className="grid min-h-dvh place-items-center text-stone-500">
+    <div className="grid min-h-svh place-items-center text-stone-500">
       Loading…
     </div>
   );
@@ -63,6 +64,7 @@ export function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <FormHint />
       <UpdatePrompt />
     </>
   );

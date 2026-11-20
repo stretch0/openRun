@@ -371,7 +371,7 @@ function Connected({
           onChange={(e) => changeStart(e.target.value)}
         />
         <p className="mt-1 text-xs text-stone-500">
-          Going further back fetches the older runs over the next few syncs.
+          Going further back fetches the older runs when you next sync.
         </p>
       </div>
 
@@ -431,6 +431,8 @@ export function describeSync(s: IntegrationSync) {
     parts.push(
       `${s.unavailable} from Strava, which intervals.icu can't pass on`,
     );
+  if (s.removed)
+    parts.push(`${s.removed} removed, now another sport on intervals.icu`);
   if (s.error) parts.push(s.error);
   if (!parts.length) parts.push('Nothing new');
   if (s.more) parts.push('more next time');

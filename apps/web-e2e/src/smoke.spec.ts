@@ -94,7 +94,10 @@ test.describe('signed in', () => {
     ).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Splits' })).toBeVisible();
 
-    await page.getByRole('link', { name: '← Runs' }).click();
+    await page
+      .getByRole('main')
+      .getByRole('link', { name: 'Runs', exact: true })
+      .click();
     await expect(
       page.getByRole('link', { name: /Riverside loop/ }),
     ).toBeVisible();
@@ -289,6 +292,10 @@ test.describe('clubs', () => {
       page.getByRole('heading', { name: 'Manage club' }),
     ).toBeVisible();
 
+    // Sending it without a name says what's missing.
+    await page.getByRole('button', { name: 'Add repeating run' }).click();
+    await expect(page.getByRole('alert')).toHaveText('Fill in “Name” first.');
+
     // Every day, so there's always a run in the next few days.
     await page.getByLabel('Name', { exact: true }).first().fill('Club run');
     for (const day of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']) {
@@ -362,7 +369,11 @@ test.describe('clubs', () => {
       256,
     );
 
-    await page.getByRole('link', { name: '← Parkside Runners' }).click();
+    await page
+      .getByRole('main')
+      .getByRole('link', { name: 'Parkside Runners', exact: true })
+      .first()
+      .click();
     await expect(page.getByTestId('club-logo')).toBeVisible();
     const code = (
       await page
@@ -412,7 +423,11 @@ test.describe('clubs', () => {
     await expect(page.getByText('Bea', { exact: true })).toBeVisible();
 
     // Coffee for tomorrow's run (today's may have closed already).
-    await page.getByRole('link', { name: '← Parkside Runners' }).click();
+    await page
+      .getByRole('main')
+      .getByRole('link', { name: 'Parkside Runners', exact: true })
+      .first()
+      .click();
     const nextRun = page.getByRole('article').nth(1);
     await nextRun.getByRole('button', { name: 'Going' }).click();
     await expect(nextRun.getByText('1 going')).toBeVisible();

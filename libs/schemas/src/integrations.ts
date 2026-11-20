@@ -10,6 +10,8 @@ export const integrationSyncSchema = z.object({
   failed: z.number(),
   /** Activities the provider won't hand over, e.g. ones from Strava. */
   unavailable: z.number(),
+  /** Runs removed because the provider now lists them as another sport. */
+  removed: z.number(),
   /** More runs are waiting; the next sync carries on. */
   more: z.boolean(),
   error: z.string().nullable(),

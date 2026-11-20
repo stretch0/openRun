@@ -5,6 +5,7 @@ import {
   orderSummarySchema,
   runCoffeeSchema,
 } from '@openrun/schemas';
+import { NO_CUTOFF } from '@openrun/domain';
 import { type App, get, send, setup, signUp } from '../test-utils.js';
 
 const HOUR = 3_600_000;
@@ -198,6 +199,38 @@ describe('coffee', () => {
     expect(await late.json()).toEqual({
       error: 'Orders for this run have closed',
     });
+  });
+
+  it('keeps orders open after the run with no cut-off, the default', async () => {
+    const { app, owner, ann, club, tea } = await clubWithMenu();
+    const startedAt = new Date(Date.now() - HOUR).toISOString();
+    const run = await json(
+      await send(app, owner, 'POST', `/api/clubs/${club.id}/runs`, {
+        title: 'Social',
+        startsAt: startedAt,
+      }),
+      clubRunDetailSchema,
+    );
+    // Open until three hours after the start.
+    expect(run.coffee).toMatchObject({ open: true });
+    expect(Date.parse(run.coffee?.closesAt ?? '')).toBe(
+      Date.parse(startedAt) + 3 * HOUR,
+    );
+    await send(app, ann, 'PUT', `/api/clubs/${club.id}/runs/${run.id}/rsvp`, {
+      status: 'going',
+    });
+    const placed = await send(
+      app,
+      ann,
+      'PUT',
+      `/api/clubs/${club.id}/runs/${run.id}/order`,
+      { menuItemId: tea.id },
+    );
+    expect(placed.status).toBe(200);
+
+    // A run that finished long ago has closed.
+    const old = await addRun(app, owner, club.id, -4 * HOUR, NO_CUTOFF);
+    expect(old.coffee?.open).toBe(false);
   });
 
   it('orders your usual when you say you’re going, if you ask it to', async () => {

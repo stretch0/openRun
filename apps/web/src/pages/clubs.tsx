@@ -45,7 +45,7 @@ export function ClubsPage() {
         </section>
       ) : null}
 
-      <JoinWithCode />
+      <JoinWithCode open={clubs?.length === 0} />
     </>
   );
 }
@@ -166,9 +166,14 @@ function CreateClub({ onCancel }: { onCancel: () => void }) {
   );
 }
 
-function JoinWithCode() {
+/**
+ * Most people arrive by invite link, so the code form stays folded away unless
+ * they have no clubs yet. Codes are for reading out at the start of a run.
+ */
+function JoinWithCode({ open: startOpen }: { open: boolean }) {
   const join = useJoinClub();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const code = String(new FormData(e.currentTarget).get('code'));
@@ -178,6 +183,16 @@ function JoinWithCode() {
       },
     });
   };
+  if (!open && !startOpen) {
+    return (
+      <button
+        className="block w-full text-center text-sm font-medium text-brand-600"
+        onClick={() => setOpen(true)}
+      >
+        Have a code? Join a club
+      </button>
+    );
+  }
   return (
     <form onSubmit={onSubmit} className="card space-y-2">
       <label className="font-semibold" htmlFor="code">
@@ -185,11 +200,12 @@ function JoinWithCode() {
       </label>
       <div className="flex gap-2">
         <input
-          className="input font-mono uppercase"
+          className="input font-mono uppercase placeholder:normal-case"
           id="code"
           name="code"
           placeholder="e.g. K7MPQ2RX"
           autoCapitalize="characters"
+          autoFocus={open}
           required
         />
         <button className="btn-primary shrink-0" disabled={join.isPending}>

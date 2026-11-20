@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useOrderSummary } from '../lib/clubs';
 import { formatRunTime } from '../lib/format';
+import { BackLink } from '../components/back-link';
 
 /** Keeps the screen on while the order list is open, where supported. */
 function useWakeLock() {
@@ -51,12 +52,7 @@ export function ClubCoffeePage() {
   return (
     <>
       <div>
-        <Link
-          to={`/clubs/${id}/runs/${runId}`}
-          className="text-sm text-brand-600"
-        >
-          ← {s.runTitle}
-        </Link>
+        <BackLink to={`/clubs/${id}/runs/${runId}`}>{s.runTitle}</BackLink>
         <h1 className="mt-1 text-2xl font-semibold">Coffee order</h1>
         <p className="text-stone-600 dark:text-stone-300">
           {s.clubName} · {formatRunTime(s.startsAt, s.timezone)}

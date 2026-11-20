@@ -18,7 +18,10 @@ export { type GeoJSONSource, LngLatBounds, MapLibreMap, NavigationControl };
 
 export const BRAND = '#0d9488';
 
-/** OpenStreetMap raster tiles; no API key needed. */
+/**
+ * OpenStreetMap raster tiles; no API key needed. Another tile host also needs
+ * adding to the Content-Security-Policy in apps/api/src/security-headers.ts.
+ */
 export const OSM_STYLE: StyleSpecification = {
   version: 8,
   sources: {

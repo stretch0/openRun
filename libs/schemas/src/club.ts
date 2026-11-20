@@ -32,11 +32,14 @@ const timeSchema = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use HH:MM, e.g. 08:00');
 const daySchema = z.iso.date();
-/** Minutes before the start that coffee orders lock. */
+/**
+ * Minutes before the start that coffee orders lock. -180 is "no cut-off":
+ * open until 3 hours after the start (NO_CUTOFF in libs/domain).
+ */
 const cutoffSchema = z
   .number()
   .int()
-  .min(0)
+  .min(-180)
   .max(24 * 60);
 
 export const locationSchema = z.object({
@@ -80,7 +83,7 @@ export const createSeriesSchema = z.object({
   startTime: timeSchema,
   locationId: z.string().nullish(),
   notes: z.string().trim().max(1000).nullish(),
-  orderCutoffMin: cutoffSchema.default(0),
+  orderCutoffMin: cutoffSchema.default(-180),
 });
 export type CreateSeries = z.infer<typeof createSeriesSchema>;
 
@@ -252,7 +255,7 @@ export const createClubRunSchema = z.object({
   startsAt: z.iso.datetime({ offset: true }),
   locationId: z.string().nullish(),
   notes: z.string().trim().max(1000).nullish(),
-  orderCutoffMin: cutoffSchema.default(0),
+  orderCutoffMin: cutoffSchema.default(-180),
 });
 export type CreateClubRun = z.infer<typeof createClubRunSchema>;
 
