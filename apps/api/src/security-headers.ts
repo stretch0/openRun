@@ -26,7 +26,9 @@ export function securityHeaders(config: Config, indexHtml?: string) {
       workerSrc: ["'self'", 'blob:'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
-      formAction: ["'self'"],
+      // Connecting intervals.icu by signing in is a form that the API
+      // redirects on to intervals.icu, and form-action covers redirects.
+      formAction: ["'self'", ...oauthOrigins(config)],
       frameAncestors: ["'none'"],
     },
     xFrameOptions: 'DENY',
@@ -37,6 +39,12 @@ export function securityHeaders(config: Config, indexHtml?: string) {
       ? 'max-age=31536000'
       : false,
   });
+}
+
+function oauthOrigins(config: Config) {
+  return config.intervalsOAuth && config.intervalsUrl
+    ? [new URL(config.intervalsUrl).origin]
+    : [];
 }
 
 /** 'sha256-…' sources for each inline <script> in the page. */

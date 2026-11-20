@@ -44,6 +44,22 @@ describe('security headers', () => {
     }
   });
 
+  it('lets the intervals.icu sign-in form leave for intervals.icu', async () => {
+    const formAction = async (env: Record<string, string>) => {
+      const { app } = setup(env);
+      const res = await app.request('/api/health');
+      const csp = res.headers.get('content-security-policy') ?? '';
+      return csp.match(/form-action ([^;]*)/)?.[1];
+    };
+    expect(await formAction({})).toBe("'self'");
+    expect(
+      await formAction({
+        INTERVALS_CLIENT_ID: 'id',
+        INTERVALS_CLIENT_SECRET: 'secret',
+      }),
+    ).toBe("'self' https://intervals.icu");
+  });
+
   it('asks browsers to stay on HTTPS when served over it', async () => {
     const { app } = setup({ ORIGIN: 'https://run.example.com' });
     const res = await app.request('/api/health');
